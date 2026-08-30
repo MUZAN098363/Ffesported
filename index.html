@@ -24,12 +24,127 @@
     .btn-red { background: #DC2626; color: white; font-weight: 600; }
     .btn-green { background: #16A34A; color: white; font-weight: 600; }
     .nav-item.active { color: #FFC107; }
+    .nav-item.active span:first-child { transform: scale(1.15); }
     .hide { display: none !important; }
     .screen { min-height: 100vh; padding-bottom: 90px; }
     .glow { box-shadow: 0 0 25px rgba(123, 44, 191, 0.4); }
-    ::-webkit-scrollbar { width: 0; }
+    ::-webkit-scrollbar { width: 0; height: 0; }
     input, select { color: white; }
     input::placeholder { color: #888; }
+
+    /* ===== SLIDING TABS (Admin only) ===== */
+    .admin-slide-tabs {
+      display: flex;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+      gap: 8px;
+      padding-bottom: 4px;
+    }
+    .admin-slide-tabs::-webkit-scrollbar { display: none; }
+    .admin-slide-tabs button {
+      flex: 0 0 auto;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    /* ===== SIDE MENU (Drawer + Animations) ===== */
+    #side-menu-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.35s ease;
+    }
+    #side-menu-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    #side-menu {
+      position: fixed; top: 0; left: 0; bottom: 0;
+      width: 78%; max-width: 300px;
+      background: #121212;
+      z-index: 210;
+      transform: translateX(-105%);
+      transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+      display: flex; flex-direction: column;
+      box-shadow: 12px 0 40px rgba(0,0,0,0.55);
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
+    #side-menu.open {
+      transform: translateX(0);
+    }
+    .side-menu-header {
+      padding: 28px 20px 20px;
+      background: linear-gradient(135deg, #7B2CBF 0%, #4c1d95 100%);
+      border-bottom: 1px solid #333;
+      opacity: 0;
+      transform: translateY(-12px);
+      transition: opacity 0.35s ease 0.08s, transform 0.35s ease 0.08s;
+    }
+    #side-menu.open .side-menu-header {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    .side-menu-item {
+      display: flex; align-items: center; gap: 14px;
+      padding: 15px 20px;
+      color: #ccc;
+      font-weight: 500;
+      font-size: 15px;
+      border-bottom: 1px solid #1f1f1f;
+      background: transparent;
+      opacity: 0;
+      transform: translateX(-24px);
+      transition: background 0.2s, color 0.2s, opacity 0.35s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    #side-menu.open .side-menu-item {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    /* Stagger delay for each item */
+    #side-menu.open .side-menu-item:nth-child(1)  { transition-delay: 0.05s; }
+    #side-menu.open .side-menu-item:nth-child(2)  { transition-delay: 0.08s; }
+    #side-menu.open .side-menu-item:nth-child(3)  { transition-delay: 0.11s; }
+    #side-menu.open .side-menu-item:nth-child(4)  { transition-delay: 0.14s; }
+    #side-menu.open .side-menu-item:nth-child(5)  { transition-delay: 0.17s; }
+    #side-menu.open .side-menu-item:nth-child(6)  { transition-delay: 0.20s; }
+    #side-menu.open .side-menu-item:nth-child(7)  { transition-delay: 0.23s; }
+    #side-menu.open .side-menu-item:nth-child(8)  { transition-delay: 0.26s; }
+    #side-menu.open .side-menu-item:nth-child(9)  { transition-delay: 0.29s; }
+    #side-menu.open .side-menu-item:nth-child(10) { transition-delay: 0.32s; }
+
+    .side-menu-item:active {
+      background: #1A1A1A;
+      color: #FFC107;
+      transform: scale(0.97);
+    }
+    .side-menu-item.active {
+      background: #1A1A1A;
+      color: #FFC107;
+      border-left: 3px solid #FFC107;
+      padding-left: 17px;
+    }
+    .side-menu-item .icon {
+      font-size: 22px; width: 28px; text-align: center;
+      transition: transform 0.25s ease;
+    }
+    .side-menu-item:active .icon,
+    .side-menu-item.active .icon {
+      transform: scale(1.15);
+    }
+    #side-menu .p-4 {
+      opacity: 0;
+      transform: translateY(10px);
+      transition: opacity 0.35s ease 0.35s, transform 0.35s ease 0.35s;
+    }
+    #side-menu.open .p-4 {
+      opacity: 1;
+      transform: translateY(0);
+    }
 
     /* ===== ANIMATIONS ===== */
     @keyframes fadeIn {
@@ -119,10 +234,61 @@
 
   <!-- ==================== USER APP ==================== -->
   <div id="main-app" class="hide">
+
+    <!-- ===== SIDE MENU (Drawer) ===== -->
+    <div id="side-menu-overlay" onclick="closeSideMenu()"></div>
+    <div id="side-menu">
+      <div class="side-menu-header">
+        <p class="text-xs text-purple-200 mb-1">FF ESPORTS</p>
+        <h2 class="text-xl font-bold text-white" id="side-menu-name">Player</h2>
+        <p class="text-xs text-purple-200 mt-1" id="side-menu-email"></p>
+      </div>
+      <div class="flex-1 py-2">
+        <button onclick="sideNav('home')" class="side-menu-item w-full text-left" data-screen="home">
+          <span class="icon">🏠</span> Home
+        </button>
+        <button onclick="sideNav('tournaments')" class="side-menu-item w-full text-left" data-screen="tournaments">
+          <span class="icon">🏆</span> Tournaments / Events
+        </button>
+        <button onclick="sideNav('matchroom')" class="side-menu-item w-full text-left" data-screen="matchroom">
+          <span class="icon">🎮</span> Match Room
+        </button>
+        <button onclick="sideNav('redeem')" class="side-menu-item w-full text-left" data-screen="redeem">
+          <span class="icon">🎁</span> Redeem Prize
+        </button>
+        <button onclick="sideNav('chat')" class="side-menu-item w-full text-left" data-screen="chat">
+          <span class="icon">💬</span> Personal Chat
+        </button>
+        <button onclick="sideNav('wallet')" class="side-menu-item w-full text-left" data-screen="wallet">
+          <span class="icon">💰</span> Wallet
+        </button>
+        <button onclick="sideNav('moreapps')" class="side-menu-item w-full text-left" data-screen="moreapps">
+          <span class="icon">📱</span> More Apps
+        </button>
+        <button onclick="sideNav('profile')" class="side-menu-item w-full text-left" data-screen="profile">
+          <span class="icon">👤</span> Profile
+        </button>
+        <button onclick="sideNav('leaderboard')" class="side-menu-item w-full text-left" data-screen="leaderboard">
+          <span class="icon">🏅</span> Leaderboard
+        </button>
+        <button onclick="sideNav('sensitivity')" class="side-menu-item w-full text-left" data-screen="sensitivity">
+          <span class="icon">🎯</span> Sensitivity
+        </button>
+      </div>
+      <div class="p-4 border-t border-gray-800">
+        <button onclick="closeSideMenu(); logout();" class="w-full bg-red-900/40 border border-red-700 text-red-400 py-3 rounded-xl font-semibold text-sm">
+          LOGOUT
+        </button>
+      </div>
+    </div>
+
     <!-- HOME -->
     <div id="screen-home" class="screen px-4 pt-4 page-enter">
       <div class="flex justify-between items-center mb-5">
-        <h1 class="text-xl font-bold">FF <span class="text-[#FFC107]">ESPORTS</span></h1>
+        <div class="flex items-center gap-3">
+          <button onclick="openSideMenu()" class="text-2xl leading-none p-1">☰</button>
+          <h1 class="text-xl font-bold">FF <span class="text-[#FFC107]">ESPORTS</span></h1>
+        </div>
         <div class="text-2xl">🔔</div>
       </div>
       <div class="card overflow-hidden mb-6 relative glow animate-glow">
@@ -139,13 +305,19 @@
 
     <!-- TOURNAMENTS -->
     <div id="screen-tournaments" class="screen px-4 pt-4 hide">
-      <h1 class="text-xl font-bold mb-5">TOURNAMENTS</h1>
+      <div class="flex items-center gap-3 mb-5">
+        <button onclick="openSideMenu()" class="text-2xl leading-none p-1">☰</button>
+        <h1 class="text-xl font-bold">TOURNAMENTS</h1>
+      </div>
       <div id="all-tournaments" class="space-y-4"></div>
     </div>
 
     <!-- MATCH ROOM -->
     <div id="screen-matchroom" class="screen px-4 pt-4 hide">
-      <h1 class="text-xl font-bold mb-5">MATCH ROOM</h1>
+      <div class="flex items-center gap-3 mb-5">
+        <button onclick="openSideMenu()" class="text-2xl leading-none p-1">☰</button>
+        <h1 class="text-xl font-bold">MATCH ROOM</h1>
+      </div>
       <div class="card p-5 text-center mb-5 animate-scale">
         <p class="text-xs text-gray-400">ROOM ID</p>
         <div class="flex items-center justify-center gap-2 mt-1">
@@ -178,7 +350,10 @@
 
     <!-- WALLET -->
     <div id="screen-wallet" class="screen px-4 pt-4 hide">
-      <h1 class="text-xl font-bold mb-6">WALLET</h1>
+      <div class="flex items-center gap-3 mb-6">
+        <button onclick="openSideMenu()" class="text-2xl leading-none p-1">☰</button>
+        <h1 class="text-xl font-bold">WALLET</h1>
+      </div>
       <div class="card p-6 text-center mb-6 relative overflow-hidden animate-scale">
         <div class="absolute right-4 top-4 text-5xl opacity-20">💰</div>
         <p class="text-gray-400 text-sm">TOTAL BALANCE</p>
@@ -198,7 +373,10 @@
 
     <!-- PROFILE -->
     <div id="screen-profile" class="screen px-4 pt-4 hide">
-      <h1 class="text-xl font-bold mb-6">PROFILE</h1>
+      <div class="flex items-center gap-3 mb-6">
+        <button onclick="openSideMenu()" class="text-2xl leading-none p-1">☰</button>
+        <h1 class="text-xl font-bold">PROFILE</h1>
+      </div>
       <div class="card p-5 flex items-center gap-4 mb-5 animate-scale">
         <div class="relative">
           <img id="profile-pic" src="" alt="Profile" class="w-20 h-20 rounded-full object-cover border-2 border-[#FFC107] hide">
@@ -275,7 +453,10 @@
 
     <!-- REDEEM PRIZE SCREEN -->
     <div id="screen-redeem" class="screen px-4 pt-4 hide">
-      <h1 class="text-xl font-bold mb-2">REDEEM PRIZE</h1>
+      <div class="flex items-center gap-3 mb-2">
+        <button onclick="openSideMenu()" class="text-2xl leading-none p-1">☰</button>
+        <h1 class="text-xl font-bold">REDEEM PRIZE</h1>
+      </div>
       <p class="text-sm text-gray-400 mb-5">Apne balance se prizes redeem karo</p>
       <div id="redeem-prizes-list" class="space-y-3">
         <p class="text-gray-500 text-center py-8">Loading prizes...</p>
@@ -289,7 +470,7 @@
     <!-- PERSONAL CHAT SCREEN (User) -->
     <div id="screen-chat" class="screen px-4 pt-4 hide flex flex-col" style="height:100vh;padding-bottom:90px;">
       <div class="flex items-center gap-3 mb-4">
-        <button onclick="showScreen('profile')" class="text-gray-400 text-lg">←</button>
+        <button onclick="openSideMenu()" class="text-2xl leading-none p-1">☰</button>
         <div>
           <h1 class="text-xl font-bold">Personal Chat</h1>
           <p class="text-xs text-gray-400">Admin se baat karo • Prize delivery yahan</p>
@@ -311,7 +492,10 @@
 
     <!-- MORE APPS SCREEN -->
     <div id="screen-moreapps" class="screen px-4 pt-4 hide">
-      <h1 class="text-xl font-bold mb-5">MORE APPS</h1>
+      <div class="flex items-center gap-3 mb-5">
+        <button onclick="openSideMenu()" class="text-2xl leading-none p-1">☰</button>
+        <h1 class="text-xl font-bold">MORE APPS</h1>
+      </div>
       <p class="text-sm text-gray-400 mb-5">Hamari dusri apps try karo</p>
 
       <div id="more-apps-list" class="space-y-4">
@@ -327,31 +511,22 @@
       </div>
     </div>
 
-    <!-- BOTTOM NAV -->
-    <div class="fixed bottom-0 left-0 right-0 bg-[#121212] border-t border-gray-800 flex justify-around items-center py-1.5 z-50">
+    <!-- BOTTOM NAV (Main 5 items only) -->
+    <div class="fixed bottom-0 left-0 right-0 bg-[#121212] border-t border-gray-800 flex justify-around items-center py-2 z-50">
       <button onclick="showScreen('home')" class="nav-item flex flex-col items-center active" data-screen="home">
-        <span class="text-base">🏠</span><span class="text-[9px] mt-0.5">Home</span>
+        <span class="text-lg">🏠</span><span class="text-[10px] mt-0.5">Home</span>
       </button>
       <button onclick="showScreen('tournaments')" class="nav-item flex flex-col items-center text-gray-400" data-screen="tournaments">
-        <span class="text-base">🏆</span><span class="text-[9px] mt-0.5">Events</span>
+        <span class="text-lg">🏆</span><span class="text-[10px] mt-0.5">Events</span>
       </button>
       <button onclick="showScreen('matchroom')" class="nav-item flex flex-col items-center text-gray-400" data-screen="matchroom">
-        <span class="text-base">🎮</span><span class="text-[9px] mt-0.5">Match</span>
-      </button>
-      <button onclick="showScreen('redeem')" class="nav-item flex flex-col items-center text-gray-400" data-screen="redeem">
-        <span class="text-base">🎁</span><span class="text-[9px] mt-0.5">Prize</span>
-      </button>
-      <button onclick="showScreen('chat')" class="nav-item flex flex-col items-center text-gray-400" data-screen="chat">
-        <span class="text-base">💬</span><span class="text-[9px] mt-0.5">Chat</span>
+        <span class="text-lg">🎮</span><span class="text-[10px] mt-0.5">Match</span>
       </button>
       <button onclick="showScreen('wallet')" class="nav-item flex flex-col items-center text-gray-400" data-screen="wallet">
-        <span class="text-base">💰</span><span class="text-[9px] mt-0.5">Wallet</span>
+        <span class="text-lg">💰</span><span class="text-[10px] mt-0.5">Wallet</span>
       </button>
-      <button onclick="showScreen('moreapps')" class="nav-item flex flex-col items-center text-gray-400" data-screen="moreapps">
-        <span class="text-base">📱</span><span class="text-[9px] mt-0.5">More</span>
-      </button>
-      <button onclick="showScreen('profile')" class="nav-item flex flex-col items-center text-gray-400" data-screen="profile">
-        <span class="text-base">👤</span><span class="text-[9px] mt-0.5">Profile</span>
+      <button onclick="openSideMenu()" class="nav-item flex flex-col items-center text-gray-400">
+        <span class="text-lg">☰</span><span class="text-[10px] mt-0.5">Menu</span>
       </button>
     </div>
 
@@ -515,12 +690,17 @@
         <div class="card p-3 text-center"><p class="text-2xl font-bold text-blue-400" id="admin-r-count">0</p><p class="text-xs text-gray-400">Rooms</p></div>
       </div>
 
-      <div class="flex gap-2 mb-5 overflow-x-auto text-sm font-semibold">
+      <div class="admin-slide-tabs mb-5 text-sm font-semibold">
         <button onclick="adminTab('tournaments')" id="tab-t" class="bg-[#7B2CBF] px-4 py-2 rounded-full whitespace-nowrap">Tournaments</button>
+        <span class="text-gray-600 self-center select-none">|</span>
         <button onclick="adminTab('rooms')" id="tab-r" class="bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap">Rooms / Room ID</button>
+        <span class="text-gray-600 self-center select-none">|</span>
         <button onclick="adminTab('users')" id="tab-u" class="bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap">Users</button>
+        <span class="text-gray-600 self-center select-none">|</span>
         <button onclick="adminTab('prizes')" id="tab-p" class="bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap">🎁 Prizes</button>
+        <span class="text-gray-600 self-center select-none">|</span>
         <button onclick="adminTab('chats')" id="tab-c" class="bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap">💬 Chats</button>
+        <span class="text-gray-600 self-center select-none">|</span>
         <button onclick="adminTab('apps')" id="tab-a" class="bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap">More Apps</button>
       </div>
 
@@ -1413,6 +1593,12 @@
         pic.classList.add('hide');
         if (placeholder) placeholder.classList.remove('hide');
       }
+
+      // Side menu header
+      const sideName = document.getElementById('side-menu-name');
+      const sideEmail = document.getElementById('side-menu-email');
+      if (sideName) sideName.textContent = currentUser.name || 'Player';
+      if (sideEmail) sideEmail.textContent = currentUser.email || '';
     }
 
     // Profile Pic Preview (base64)
@@ -2130,6 +2316,33 @@
       window.open('https://wa.me/923134004221?text=' + message, '_blank');
     }
 
+    function openSideMenu() {
+      document.getElementById('side-menu').classList.add('open');
+      document.getElementById('side-menu-overlay').classList.add('open');
+      // highlight current screen
+      document.querySelectorAll('.side-menu-item').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.dataset.screen) {
+          const current = document.querySelector('.nav-item.active');
+          // just visual, optional
+        }
+      });
+    }
+
+    function closeSideMenu() {
+      document.getElementById('side-menu').classList.remove('open');
+      document.getElementById('side-menu-overlay').classList.remove('open');
+    }
+
+    function sideNav(name) {
+      closeSideMenu();
+      showScreen(name);
+      // mark side item active
+      document.querySelectorAll('.side-menu-item').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.screen === name);
+      });
+    }
+
     function showScreen(name) {
       ['home','tournaments','matchroom','leaderboard','sensitivity','wallet','profile','moreapps','redeem','chat'].forEach(s => {
         const screen = document.getElementById('screen-' + s);
@@ -2150,6 +2363,10 @@
         active.classList.add('active');
         active.classList.remove('text-gray-400');
       }
+      // side menu active state
+      document.querySelectorAll('.side-menu-item').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.screen === name);
+      });
       if (name === 'wallet') updateWalletUI();
       if (name === 'profile') updateProfileUI();
       if (name === 'chat') startUserChatListener();
