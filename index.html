@@ -1,0 +1,2395 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#0D0D0D" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>FF Esports Live</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+  <!-- Storage not used (Spark plan) -->
+
+  <style>
+    * { font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+    body { background: #0D0D0D; color: white; overflow-x: hidden; margin: 0; }
+    .card { background: #1A1A1A; border-radius: 16px; }
+    .btn-yellow { background: #FFC107; color: #000; font-weight: 700; }
+    .btn-purple { background: #7B2CBF; color: white; font-weight: 600; }
+    .btn-red { background: #DC2626; color: white; font-weight: 600; }
+    .btn-green { background: #16A34A; color: white; font-weight: 600; }
+    .nav-item.active { color: #FFC107; }
+    .hide { display: none !important; }
+    .screen { min-height: 100vh; padding-bottom: 90px; }
+    .glow { box-shadow: 0 0 25px rgba(123, 44, 191, 0.4); }
+    ::-webkit-scrollbar { width: 0; }
+    input, select { color: white; }
+    input::placeholder { color: #888; }
+
+    /* ===== ANIMATIONS ===== */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(15px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes scaleIn {
+      from { opacity: 0; transform: scale(0.85); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.08); opacity: 0.85; }
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(40px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes glowPulse {
+      0%, 100% { box-shadow: 0 0 20px rgba(255, 193, 7, 0.3); }
+      50% { box-shadow: 0 0 40px rgba(255, 193, 7, 0.6); }
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .animate-fade { animation: fadeIn 0.5s ease forwards; }
+    .animate-scale { animation: scaleIn 0.45s ease forwards; }
+    .animate-slide { animation: slideUp 0.5s ease forwards; }
+    .animate-pulse-slow { animation: pulse 2s ease-in-out infinite; }
+    .animate-glow { animation: glowPulse 2.5s ease-in-out infinite; }
+
+    /* Splash */
+    #splash {
+      position: fixed; inset: 0; background: #0D0D0D; z-index: 9999;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+    }
+    .splash-logo {
+      font-size: 3.2rem; font-weight: 800; letter-spacing: -1px;
+      animation: scaleIn 0.8s ease, pulse 2s ease-in-out 0.8s infinite;
+    }
+    .splash-sub { color: #FFC107; margin-top: 8px; font-size: 0.95rem; opacity: 0; animation: fadeIn 0.6s ease 0.4s forwards; }
+    .loader {
+      width: 42px; height: 42px; border: 3px solid #333;
+      border-top-color: #FFC107; border-radius: 50%;
+      margin-top: 30px; animation: spin 0.8s linear infinite;
+    }
+
+    /* Page transition */
+    .page-enter { animation: fadeIn 0.4s ease forwards; }
+  </style>
+</head>
+<body>
+
+  <!-- ==================== SPLASH SCREEN ==================== -->
+  <div id="splash">
+    <div class="splash-logo">FF <span style="color:#FFC107">ESPORTS</span></div>
+    <div class="splash-sub">Free Fire Tournaments • Live</div>
+    <div class="loader"></div>
+    <p style="margin-top:20px;font-size:12px;color:#666" id="splash-status">Loading...</p>
+  </div>
+
+  <!-- ==================== AUTH ==================== -->
+  <div id="auth-screen" class="screen flex flex-col items-center justify-center px-6 min-h-screen hide">
+    <div class="text-center mb-8 animate-scale">
+      <h1 class="text-4xl font-extrabold">FF <span class="text-[#FFC107]">ESPORTS</span></h1>
+      <p class="text-gray-400 mt-2 text-sm">Free Fire Tournaments • Pakistani Rs</p>
+    </div>
+
+    <div id="login-form" class="w-full max-w-sm space-y-4 animate-slide">
+      <input id="login-email" type="email" placeholder="Email" class="w-full bg-[#1A1A1A] border border-gray-700 rounded-xl px-4 py-3.5 outline-none focus:border-[#FFC107]" />
+      <input id="login-pass" type="password" placeholder="Password" class="w-full bg-[#1A1A1A] border border-gray-700 rounded-xl px-4 py-3.5 outline-none focus:border-[#FFC107]" />
+      <button onclick="doLogin()" class="w-full btn-yellow py-3.5 rounded-xl text-lg">LOGIN</button>
+      <p class="text-center text-sm text-gray-400">New player? <span onclick="showSignup()" class="text-[#FFC107] font-semibold cursor-pointer">Create Account</span></p>
+      <p class="text-center text-xs text-gray-500 mt-3">Admin bhi yahi se login kare</p>
+    </div>
+
+    <div id="signup-form" class="w-full max-w-sm space-y-4 hide">
+      <input id="signup-name" type="text" placeholder="Player Name" class="w-full bg-[#1A1A1A] border border-gray-700 rounded-xl px-4 py-3.5 outline-none focus:border-[#FFC107]" />
+      <input id="signup-email" type="email" placeholder="Email" class="w-full bg-[#1A1A1A] border border-gray-700 rounded-xl px-4 py-3.5 outline-none focus:border-[#FFC107]" />
+      <input id="signup-pass" type="password" placeholder="Password" class="w-full bg-[#1A1A1A] border border-gray-700 rounded-xl px-4 py-3.5 outline-none focus:border-[#FFC107]" />
+      <button onclick="doSignup()" class="w-full btn-yellow py-3.5 rounded-xl text-lg">CREATE ACCOUNT</button>
+      <p class="text-center text-sm text-gray-400">Already have account? <span onclick="showLogin()" class="text-[#FFC107] font-semibold cursor-pointer">Login</span></p>
+      <p class="text-center text-xs text-green-400 mt-2">New account pe 10 Rs Welcome Bonus</p>
+    </div>
+  </div>
+
+  <!-- ==================== USER APP ==================== -->
+  <div id="main-app" class="hide">
+    <!-- HOME -->
+    <div id="screen-home" class="screen px-4 pt-4 page-enter">
+      <div class="flex justify-between items-center mb-5">
+        <h1 class="text-xl font-bold">FF <span class="text-[#FFC107]">ESPORTS</span></h1>
+        <div class="text-2xl">🔔</div>
+      </div>
+      <div class="card overflow-hidden mb-6 relative glow animate-glow">
+        <div class="bg-gradient-to-r from-purple-900 via-purple-700 to-indigo-800 p-5">
+          <p class="text-[#FFC107] font-bold text-sm">FREE FIRE</p>
+          <h2 class="text-2xl font-extrabold mt-1">BATTLE FOR GLORY</h2>
+          <p class="text-sm text-gray-300 mt-2">SQUAD TOURNAMENT</p>
+          <button onclick="showScreen('tournaments')" class="mt-4 btn-purple px-5 py-2 rounded-lg text-sm">REGISTER NOW</button>
+        </div>
+      </div>
+      <h3 class="font-bold text-lg mb-3">UPCOMING TOURNAMENTS</h3>
+      <div id="home-tournaments" class="space-y-3"></div>
+    </div>
+
+    <!-- TOURNAMENTS -->
+    <div id="screen-tournaments" class="screen px-4 pt-4 hide">
+      <h1 class="text-xl font-bold mb-5">TOURNAMENTS</h1>
+      <div id="all-tournaments" class="space-y-4"></div>
+    </div>
+
+    <!-- MATCH ROOM -->
+    <div id="screen-matchroom" class="screen px-4 pt-4 hide">
+      <h1 class="text-xl font-bold mb-5">MATCH ROOM</h1>
+      <div class="card p-5 text-center mb-5 animate-scale">
+        <p class="text-xs text-gray-400">ROOM ID</p>
+        <div class="flex items-center justify-center gap-2 mt-1">
+          <p id="current-room-id" class="text-3xl font-bold tracking-widest">------</p>
+          <button onclick="copyRoomId()" class="text-[#FFC107] text-sm">📋</button>
+        </div>
+        <p class="text-yellow-400 text-sm mt-2 font-semibold">WAITING FOR PLAYERS</p>
+      </div>
+      <div class="grid grid-cols-3 gap-3 mb-5 text-center text-sm">
+        <div class="card p-3"><p class="text-gray-400 text-xs">GAME MODE</p><p id="room-mode" class="font-bold mt-1">-</p></div>
+        <div class="card p-3"><p class="text-gray-400 text-xs">MAP</p><p id="room-map" class="font-bold mt-1">-</p></div>
+        <div class="card p-3"><p class="text-gray-400 text-xs">PLAYERS</p><p id="room-players" class="font-bold mt-1">-</p></div>
+        <div class="card p-3"><p class="text-gray-400 text-xs">ROOM TYPE</p><p class="font-bold mt-1">PAID</p></div>
+        <div class="card p-3"><p class="text-gray-400 text-xs">ENTRY FEE</p><p id="room-fee" class="font-bold mt-1">-</p></div>
+        <div class="card p-3"><p class="text-gray-400 text-xs">PRIZE POOL</p><p id="room-prize" class="font-bold mt-1 text-[#FFC107]">-</p></div>
+      </div>
+      <p class="text-sm mb-3">Active Rooms</p>
+      <div id="active-rooms" class="space-y-3"></div>
+    </div>
+
+    <!-- LEADERBOARD -->
+    <div id="screen-leaderboard" class="screen px-4 pt-4 hide">
+      <h1 class="text-xl font-bold mb-5">LEADERBOARD</h1>
+      <div class="card divide-y divide-gray-800">
+        <div class="flex items-center justify-between px-4 py-3.5"><div class="flex items-center gap-3"><span class="text-yellow-400 font-bold">1</span><span class="font-semibold">NG JASIM</span></div><span class="font-bold">2450</span></div>
+        <div class="flex items-center justify-between px-4 py-3.5"><div class="flex items-center gap-3"><span class="text-gray-300 font-bold">2</span><span class="font-semibold">NG SMOOTH</span></div><span class="font-bold">2150</span></div>
+        <div class="flex items-center justify-between px-4 py-3.5"><div class="flex items-center gap-3"><span class="text-orange-400 font-bold">3</span><span class="font-semibold">NG WHITE444</span></div><span class="font-bold">2001</span></div>
+      </div>
+    </div>
+
+    <!-- WALLET -->
+    <div id="screen-wallet" class="screen px-4 pt-4 hide">
+      <h1 class="text-xl font-bold mb-6">WALLET</h1>
+      <div class="card p-6 text-center mb-6 relative overflow-hidden animate-scale">
+        <div class="absolute right-4 top-4 text-5xl opacity-20">💰</div>
+        <p class="text-gray-400 text-sm">TOTAL BALANCE</p>
+        <p id="wallet-balance" class="text-4xl font-extrabold mt-2">₹0.00</p>
+        <div class="flex gap-3 justify-center mt-5">
+          <button onclick="addMoney()" class="btn-yellow px-6 py-3 rounded-xl font-bold">ADD MONEY</button>
+          <button onclick="openWithdrawModal()" class="btn-red px-6 py-3 rounded-xl font-bold">WITHDRAW</button>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-3 mb-6">
+        <div class="card p-4 text-center"><p class="text-gray-400 text-xs">WINNINGS</p><p id="wallet-winnings" class="text-xl font-bold mt-1">₹0.00</p></div>
+        <div class="card p-4 text-center"><p class="text-gray-400 text-xs">BONUS</p><p id="wallet-bonus" class="text-xl font-bold mt-1 text-green-400">₹0.00</p></div>
+      </div>
+      <h3 class="font-bold mb-3">TRANSACTION HISTORY</h3>
+      <div id="tx-list" class="card divide-y divide-gray-800"></div>
+    </div>
+
+    <!-- PROFILE -->
+    <div id="screen-profile" class="screen px-4 pt-4 hide">
+      <h1 class="text-xl font-bold mb-6">PROFILE</h1>
+      <div class="card p-5 flex items-center gap-4 mb-5 animate-scale">
+        <div class="relative">
+          <img id="profile-pic" src="" alt="Profile" class="w-20 h-20 rounded-full object-cover border-2 border-[#FFC107] hide">
+          <div id="profile-pic-placeholder" class="w-20 h-20 rounded-full bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center text-3xl">🧑‍🎤</div>
+        </div>
+        <div class="flex-1">
+          <h2 id="profile-name" class="text-xl font-bold">Player</h2>
+          <p class="text-sm text-gray-400">UID: <span id="profile-uid">----</span></p>
+          <p class="text-sm text-[#FFC107] mt-1">FF ID: <span id="profile-ffid">Not set</span></p>
+          <span class="inline-block mt-1 bg-yellow-600 text-black text-xs font-bold px-2 py-0.5 rounded">PLAYER</span>
+        </div>
+      </div>
+
+      <!-- Edit Profile Section -->
+      <div class="card p-4 mb-5">
+        <h3 class="font-bold mb-3 text-[#FFC107]">Edit Profile</h3>
+        
+        <div class="mb-4">
+          <label class="text-sm text-gray-400 mb-1 block">Profile Picture</label>
+          <input type="file" id="profile-pic-input" accept="image/*" onchange="previewProfilePic(event)"
+                 class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-300" />
+          <p class="text-xs text-gray-500 mt-1">Small photo choose karo (max 300KB recommended)</p>
+        </div>
+
+        <div class="mb-4">
+          <label class="text-sm text-gray-400 mb-1 block">Free Fire ID</label>
+          <input id="ff-id-input" type="text" placeholder="Apni Free Fire ID likho"
+                 class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none focus:border-[#FFC107] text-white" />
+        </div>
+
+        <button onclick="saveProfile()" class="w-full btn-yellow py-3 rounded-xl font-bold">SAVE PROFILE</button>
+      </div>
+
+      <button onclick="showScreen('chat')" 
+         class="w-full mb-3 bg-[#7B2CBF] text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2">
+        <span class="text-xl">💬</span> Personal Chat with Admin
+      </button>
+
+      <a href="https://chat.whatsapp.com/EQlxgSAtEVk6fOHf14Nnfu" target="_blank" 
+         class="w-full mb-3 bg-[#25D366] text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2">
+        <span class="text-xl">💬</span> Join WhatsApp Group
+      </a>
+
+      <a href="https://wa.me/923134004221?text=Salam%2C%20Sensitivity%20buy%20karni%20hai" target="_blank" 
+         class="w-full mb-4 bg-[#128C7E] text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2">
+        <span class="text-xl">🎯</span> Buy Sensitivity
+      </a>
+
+      <button onclick="logout()" class="w-full bg-red-900/50 border border-red-700 text-red-400 py-3 rounded-xl font-semibold">LOGOUT</button>
+    </div>
+
+    <!-- SENSITIVITY SCREEN -->
+    <div id="screen-sensitivity" class="screen px-4 pt-4 hide">
+      <h1 class="text-xl font-bold mb-5">SENSITIVITY</h1>
+
+      <div class="card p-5 mb-6 text-center">
+        <div class="text-5xl mb-3">🎯</div>
+        <h2 class="text-lg font-bold mb-1">Custom Sensitivity</h2>
+        <p class="text-sm text-gray-400">Apne device ka naam likho aur Buy Sensitivity dabao</p>
+      </div>
+
+      <div class="card p-4 mb-5">
+        <label class="text-sm text-gray-400 mb-2 block">Device Name</label>
+        <input id="device-name" type="text" placeholder="Example: Infinix Hot 40, Redmi Note 13..." 
+               class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3.5 outline-none focus:border-[#FFC107] text-white" />
+      </div>
+
+      <button onclick="buySensitivity()" 
+              class="w-full bg-[#25D366] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 text-lg">
+        <span class="text-2xl">💬</span> Buy Sensitivity
+      </button>
+      <p class="text-center text-xs text-gray-400 mt-3">WhatsApp: +92 313 4004221</p>
+    </div>
+
+    <!-- REDEEM PRIZE SCREEN -->
+    <div id="screen-redeem" class="screen px-4 pt-4 hide">
+      <h1 class="text-xl font-bold mb-2">REDEEM PRIZE</h1>
+      <p class="text-sm text-gray-400 mb-5">Apne balance se prizes redeem karo</p>
+      <div id="redeem-prizes-list" class="space-y-3">
+        <p class="text-gray-500 text-center py-8">Loading prizes...</p>
+      </div>
+      <div class="mt-6 card p-4 text-center">
+        <p class="text-sm text-gray-300 mb-3">Prize deliver ke liye Admin se personal chat karo</p>
+        <button onclick="showScreen('chat')" class="w-full btn-purple py-3 rounded-xl font-bold">💬 Open Personal Chat</button>
+      </div>
+    </div>
+
+    <!-- PERSONAL CHAT SCREEN (User) -->
+    <div id="screen-chat" class="screen px-4 pt-4 hide flex flex-col" style="height:100vh;padding-bottom:90px;">
+      <div class="flex items-center gap-3 mb-4">
+        <button onclick="showScreen('profile')" class="text-gray-400 text-lg">←</button>
+        <div>
+          <h1 class="text-xl font-bold">Personal Chat</h1>
+          <p class="text-xs text-gray-400">Admin se baat karo • Prize delivery yahan</p>
+        </div>
+      </div>
+
+      <div id="chat-messages" class="flex-1 overflow-y-auto space-y-3 mb-3 pr-1" style="max-height:calc(100vh - 220px);">
+        <p class="text-gray-500 text-center text-sm py-8">Loading messages...</p>
+      </div>
+
+      <div class="flex gap-2 items-end">
+        <input id="chat-input" type="text" placeholder="Message likho..." 
+               class="flex-1 bg-[#1A1A1A] border border-gray-700 rounded-xl px-4 py-3 outline-none focus:border-[#FFC107] text-white"
+               onkeydown="if(event.key==='Enter') sendChatMessage()" />
+        <button onclick="sendChatMessage()" class="btn-yellow px-5 py-3 rounded-xl font-bold">Send</button>
+      </div>
+      <p class="text-xs text-center text-gray-500 mt-2">Prize redeem ke baad yahan message karo, admin deliver karega</p>
+    </div>
+
+    <!-- MORE APPS SCREEN -->
+    <div id="screen-moreapps" class="screen px-4 pt-4 hide">
+      <h1 class="text-xl font-bold mb-5">MORE APPS</h1>
+      <p class="text-sm text-gray-400 mb-5">Hamari dusri apps try karo</p>
+
+      <div id="more-apps-list" class="space-y-4">
+        <!-- Dynamic apps from Firebase -->
+        <div class="card p-4 flex items-center gap-4">
+          <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center text-2xl">🎮</div>
+          <div class="flex-1">
+            <h3 class="font-bold">FF Esports</h3>
+            <p class="text-xs text-gray-400">Yeh app (current)</p>
+          </div>
+          <span class="bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold">ACTIVE</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <div class="fixed bottom-0 left-0 right-0 bg-[#121212] border-t border-gray-800 flex justify-around items-center py-1.5 z-50">
+      <button onclick="showScreen('home')" class="nav-item flex flex-col items-center active" data-screen="home">
+        <span class="text-base">🏠</span><span class="text-[9px] mt-0.5">Home</span>
+      </button>
+      <button onclick="showScreen('tournaments')" class="nav-item flex flex-col items-center text-gray-400" data-screen="tournaments">
+        <span class="text-base">🏆</span><span class="text-[9px] mt-0.5">Events</span>
+      </button>
+      <button onclick="showScreen('matchroom')" class="nav-item flex flex-col items-center text-gray-400" data-screen="matchroom">
+        <span class="text-base">🎮</span><span class="text-[9px] mt-0.5">Match</span>
+      </button>
+      <button onclick="showScreen('redeem')" class="nav-item flex flex-col items-center text-gray-400" data-screen="redeem">
+        <span class="text-base">🎁</span><span class="text-[9px] mt-0.5">Prize</span>
+      </button>
+      <button onclick="showScreen('chat')" class="nav-item flex flex-col items-center text-gray-400" data-screen="chat">
+        <span class="text-base">💬</span><span class="text-[9px] mt-0.5">Chat</span>
+      </button>
+      <button onclick="showScreen('wallet')" class="nav-item flex flex-col items-center text-gray-400" data-screen="wallet">
+        <span class="text-base">💰</span><span class="text-[9px] mt-0.5">Wallet</span>
+      </button>
+      <button onclick="showScreen('moreapps')" class="nav-item flex flex-col items-center text-gray-400" data-screen="moreapps">
+        <span class="text-base">📱</span><span class="text-[9px] mt-0.5">More</span>
+      </button>
+      <button onclick="showScreen('profile')" class="nav-item flex flex-col items-center text-gray-400" data-screen="profile">
+        <span class="text-base">👤</span><span class="text-[9px] mt-0.5">Profile</span>
+      </button>
+    </div>
+
+    <!-- WhatsApp Group Floating Button -->
+    <a href="https://chat.whatsapp.com/EQlxgSAtEVk6fOHf14Nnfu" target="_blank" 
+       class="fixed bottom-24 right-4 z-40 w-14 h-14 rounded-full bg-[#25D366] flex items-center justify-center shadow-lg"
+       style="box-shadow: 0 4px 15px rgba(37,211,102,0.5);">
+      <span class="text-2xl">💬</span>
+    </a>
+  </div>
+
+  <!-- ==================== DEPOSIT MODAL (No Storage – link / WhatsApp) ==================== -->
+  <div id="deposit-modal" class="hide fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/80 px-4">
+    <div class="card w-full max-w-md p-5 mb-4 animate-slide" style="max-height:90vh;overflow-y:auto">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold">💰 Add Money Request</h2>
+        <button onclick="closeDepositModal()" class="text-gray-400 text-2xl leading-none">&times;</button>
+      </div>
+
+      <div class="bg-[#0D0D0D] rounded-xl p-4 mb-4 text-sm">
+        <p class="text-gray-400 mb-1">Easypaisa Number pe paise bhejo:</p>
+        <p class="text-[#FFC107] font-bold text-lg">📱 0321-4033460</p>
+        <p class="text-gray-400 mt-1">Account: FF Esports</p>
+        <p class="text-xs text-yellow-400 mt-2">1) Paise bhejo → 2) Screenshot WhatsApp pe bhejo ya link paste karo → 3) Request submit karo. Admin check karke balance add karega.</p>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm text-gray-400 mb-1 block">Amount (Rs) <span class="text-red-400">*</span></label>
+          <input id="deposit-amount" type="number" placeholder="e.g. 100" min="1"
+                 class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none focus:border-[#FFC107]" />
+        </div>
+
+        <div>
+          <label class="text-sm text-gray-400 mb-1 block">Screenshot Link (optional)</label>
+          <input id="deposit-link" type="url" placeholder="Google Drive / ImgBB / any image link"
+                 class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none focus:border-[#FFC107]" />
+          <p class="text-xs text-gray-500 mt-1">Agar link nahi hai to neeche WhatsApp option use karo</p>
+        </div>
+
+        <label class="flex items-start gap-3 bg-[#0D0D0D] rounded-xl p-3 cursor-pointer">
+          <input id="deposit-wa-confirm" type="checkbox" class="mt-1 w-4 h-4 accent-[#FFC107]" />
+          <span class="text-sm text-gray-300">Maine payment screenshot <span class="text-[#25D366] font-semibold">WhatsApp</span> pe bhej diya hai (+92 313 4004221)</span>
+        </label>
+
+        <a href="https://wa.me/923134004221?text=Salam%2C%20maine%20payment%20kar%20diya%20hai.%20Screenshot%20bhej%20raha%20hoon." target="_blank"
+           class="w-full bg-[#25D366] text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 text-sm">
+          <span>💬</span> Open WhatsApp &amp; Send Screenshot
+        </a>
+
+        <button id="submit-deposit-btn" onclick="submitDepositRequest()" class="w-full btn-yellow py-3.5 rounded-xl font-bold">
+          SUBMIT REQUEST
+        </button>
+        <p class="text-xs text-center text-gray-500">Amount + (Screenshot link YA WhatsApp confirm) zaroori hai. Admin approve karega tab balance aayega.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Link / Screenshot Viewer (Admin) -->
+  <div id="screenshot-viewer" class="hide fixed inset-0 z-[110] flex items-center justify-center bg-black/90 px-4" onclick="closeScreenshotViewer()">
+    <div class="relative max-w-lg w-full" onclick="event.stopPropagation()">
+      <button onclick="closeScreenshotViewer()" class="absolute -top-10 right-0 text-white text-3xl">&times;</button>
+      <img id="viewer-img" src="" alt="Payment Screenshot" class="w-full rounded-xl max-h-[80vh] object-contain" />
+      <p id="viewer-link-note" class="text-center text-sm text-gray-400 mt-2 hide"></p>
+    </div>
+  </div>
+
+  <!-- ==================== WITHDRAW MODAL ==================== -->
+  <div id="withdraw-modal" class="hide fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/80 px-4">
+    <div class="card w-full max-w-md p-5 mb-4 animate-slide" style="max-height:90vh;overflow-y:auto">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold">💸 Withdraw Money</h2>
+        <button onclick="closeWithdrawModal()" class="text-gray-400 text-2xl leading-none">&times;</button>
+      </div>
+
+      <div class="bg-[#0D0D0D] rounded-xl p-4 mb-4 text-sm">
+        <p class="text-gray-400">Apna Bank / EasyPaisa / JazzCash details likho. Admin check karke paise bhejega.</p>
+        <p class="text-xs text-yellow-400 mt-2">Minimum withdraw: ₹50 • Balance se cut hoga jab admin approve karega.</p>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm text-gray-400 mb-1 block">Amount (Rs) <span class="text-red-400">*</span></label>
+          <input id="withdraw-amount" type="number" placeholder="e.g. 100" min="50"
+                 class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none focus:border-[#FFC107]" />
+        </div>
+        <div>
+          <label class="text-sm text-gray-400 mb-1 block">Payment Method <span class="text-red-400">*</span></label>
+          <select id="withdraw-method" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none focus:border-[#FFC107]">
+            <option value="EasyPaisa">EasyPaisa</option>
+            <option value="JazzCash">JazzCash</option>
+            <option value="Bank">Bank Transfer</option>
+          </select>
+        </div>
+        <div>
+          <label class="text-sm text-gray-400 mb-1 block">Account Title / Name <span class="text-red-400">*</span></label>
+          <input id="withdraw-name" type="text" placeholder="Account holder name"
+                 class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none focus:border-[#FFC107]" />
+        </div>
+        <div>
+          <label class="text-sm text-gray-400 mb-1 block">Account / Mobile Number <span class="text-red-400">*</span></label>
+          <input id="withdraw-number" type="text" placeholder="03XX-XXXXXXX or Account No"
+                 class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none focus:border-[#FFC107]" />
+        </div>
+        <div>
+          <label class="text-sm text-gray-400 mb-1 block">Bank Name (Bank Transfer ke liye)</label>
+          <input id="withdraw-bank" type="text" placeholder="e.g. HBL, Meezan, JazzCash..."
+                 class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none focus:border-[#FFC107]" />
+        </div>
+
+        <button id="submit-withdraw-btn" onclick="submitWithdrawRequest()" class="w-full btn-red py-3.5 rounded-xl font-bold">
+          SUBMIT WITHDRAW REQUEST
+        </button>
+        <p class="text-xs text-center text-gray-500">Request pending rahegi. Admin approve/reject karega. Balance approve hone pe cut hoga.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== JOIN SUCCESS MODAL (Free Fire style) ==================== -->
+  <div id="join-success-modal" class="hide fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/80 px-4">
+    <div class="card w-full max-w-md p-5 mb-4 animate-scale" style="max-height:90vh;overflow-y:auto">
+      <div class="text-center mb-4">
+        <div class="text-5xl mb-2">🏆</div>
+        <h2 class="text-xl font-bold text-[#FFC107]">JOINED SUCCESSFULLY!</h2>
+        <p id="join-success-title" class="text-sm text-gray-300 mt-1">Tournament</p>
+      </div>
+
+      <div class="bg-[#0D0D0D] rounded-xl p-4 mb-4 space-y-3 text-sm">
+        <div class="flex justify-between"><span class="text-gray-400">Entry Fee</span><span id="join-success-fee" class="font-bold">₹0</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">New Balance</span><span id="join-success-balance" class="font-bold text-green-400">₹0</span></div>
+        <div class="flex justify-between"><span class="text-gray-400">Status</span><span class="text-green-400 font-semibold">✓ Registered</span></div>
+      </div>
+
+      <div class="bg-purple-900/40 border border-purple-700 rounded-xl p-4 mb-4">
+        <p class="text-xs text-gray-400 mb-1">ROOM / SCENE</p>
+        <p id="join-success-room" class="text-lg font-bold tracking-wider text-[#FFC107]">Waiting for Room ID...</p>
+        <p class="text-xs text-gray-500 mt-2">Match Room tab se Room ID mil jayega jab admin live karega. Team list Match Room me dikhegi.</p>
+      </div>
+
+      <div class="flex gap-3">
+        <button onclick="closeJoinSuccessModal(); showScreen('matchroom');" class="flex-1 btn-purple py-3 rounded-xl font-bold text-sm">GO TO MATCH ROOM</button>
+        <button onclick="closeJoinSuccessModal()" class="flex-1 bg-gray-700 py-3 rounded-xl font-bold text-sm">OK</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== ADMIN PANEL ==================== -->
+  <div id="admin-app" class="hide">
+    <div class="px-4 pt-4 pb-20">
+      <div class="flex justify-between items-center mb-6">
+        <div>
+          <h1 class="text-xl font-bold">ADMIN PANEL</h1>
+          <p class="text-xs text-gray-400">Live Control • Firebase</p>
+        </div>
+        <button onclick="logout()" class="text-red-400 text-sm font-semibold">LOGOUT</button>
+      </div>
+
+      <div class="grid grid-cols-3 gap-3 mb-6">
+        <div class="card p-3 text-center"><p class="text-2xl font-bold text-[#FFC107]" id="admin-t-count">0</p><p class="text-xs text-gray-400">Tournaments</p></div>
+        <div class="card p-3 text-center"><p class="text-2xl font-bold text-green-400" id="admin-u-count">0</p><p class="text-xs text-gray-400">Users</p></div>
+        <div class="card p-3 text-center"><p class="text-2xl font-bold text-blue-400" id="admin-r-count">0</p><p class="text-xs text-gray-400">Rooms</p></div>
+      </div>
+
+      <div class="flex gap-2 mb-5 overflow-x-auto text-sm font-semibold">
+        <button onclick="adminTab('tournaments')" id="tab-t" class="bg-[#7B2CBF] px-4 py-2 rounded-full whitespace-nowrap">Tournaments</button>
+        <button onclick="adminTab('rooms')" id="tab-r" class="bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap">Rooms / Room ID</button>
+        <button onclick="adminTab('users')" id="tab-u" class="bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap">Users</button>
+        <button onclick="adminTab('prizes')" id="tab-p" class="bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap">🎁 Prizes</button>
+        <button onclick="adminTab('chats')" id="tab-c" class="bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap">💬 Chats</button>
+        <button onclick="adminTab('apps')" id="tab-a" class="bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap">More Apps</button>
+      </div>
+
+      <!-- Tournaments -->
+      <div id="admin-tournaments">
+        <div class="card p-4 mb-5">
+          <h3 class="font-bold mb-3">Add Tournament</h3>
+          <div class="space-y-3">
+            <input id="t-title" type="text" placeholder="Tournament Name" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            <div class="grid grid-cols-2 gap-3">
+              <select id="t-mode" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none">
+                <option value="SQUAD">SQUAD</option><option value="1 VS 1">1 VS 1</option><option value="DUO">DUO</option><option value="CUSTOM">CUSTOM</option>
+              </select>
+              <input id="t-date" type="text" placeholder="Date (26 MAY)" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <input id="t-entry" type="number" placeholder="Entry Fee Rs" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+              <input id="t-prize" type="number" placeholder="Prize Pool Rs" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            </div>
+            <input id="t-slots" type="text" placeholder="Slots (30/48 Teams)" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            <button onclick="addTournament()" class="w-full btn-yellow py-3 rounded-xl">ADD TOURNAMENT</button>
+          </div>
+        </div>
+        <div id="admin-t-list" class="space-y-3"></div>
+      </div>
+
+      <!-- Rooms -->
+      <div id="admin-rooms" class="hide">
+        <div class="card p-4 mb-5">
+          <h3 class="font-bold mb-3">Create Room + Room ID</h3>
+          <div class="space-y-3">
+            <input id="r-title" type="text" placeholder="Room Title" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            <div class="grid grid-cols-2 gap-3">
+              <select id="r-mode" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none">
+                <option value="CLASH SQUAD">CLASH SQUAD</option><option value="BR RANKED">BR RANKED</option><option value="1 VS 1">1 VS 1</option>
+              </select>
+              <select id="r-map" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none">
+                <option value="BERMUDA">BERMUDA</option><option value="PURGATORY">PURGATORY</option><option value="KALAHARI">KALAHARI</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <input id="r-entry" type="number" placeholder="Entry Fee Rs" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+              <input id="r-prize" type="number" placeholder="Prize Pool Rs" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            </div>
+            <input id="r-players" type="text" placeholder="Players 8/8" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" value="8/8" />
+            <button onclick="createRoom()" class="w-full btn-green py-3 rounded-xl">CREATE ROOM + ROOM ID</button>
+          </div>
+        </div>
+        <div id="admin-r-list" class="space-y-3"></div>
+      </div>
+
+      <!-- Users -->
+      <div id="admin-users" class="hide">
+        <div class="card p-4 mb-5">
+          <h3 class="font-bold mb-3 text-yellow-400">⏳ Pending Deposits</h3>
+          <div id="admin-deposits-list" class="space-y-2">
+            <p class="text-gray-500 text-sm text-center">Loading...</p>
+          </div>
+        </div>
+
+        <div class="card p-4 mb-5">
+          <h3 class="font-bold mb-3 text-red-400">💸 Pending Withdrawals</h3>
+          <div id="admin-withdrawals-list" class="space-y-2">
+            <p class="text-gray-500 text-sm text-center">Loading...</p>
+          </div>
+        </div>
+
+        <div class="card p-4 mb-5">
+          <h3 class="font-bold mb-3 text-blue-400">📋 Recent Tournament Joins</h3>
+          <div id="admin-registrations-list" class="space-y-2">
+            <p class="text-gray-500 text-sm text-center">Loading...</p>
+          </div>
+        </div>
+
+        <div class="card p-4 mb-5">
+          <h3 class="font-bold mb-3">Create New User</h3>
+          <div class="space-y-3">
+            <input id="admin-u-name" type="text" placeholder="Player Name" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            <input id="admin-u-email" type="email" placeholder="Email" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            <input id="admin-u-pass" type="text" placeholder="Password" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            <input id="admin-u-balance" type="number" placeholder="Starting Balance (Rs)" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" value="10" />
+            <button onclick="adminCreateUser()" class="w-full btn-green py-3 rounded-xl">CREATE USER</button>
+            <p class="text-xs text-yellow-400 text-center">Note: Creating user will temporarily log you out. Login again as admin.</p>
+          </div>
+        </div>
+        <h3 class="font-bold mb-3">All Users</h3>
+        <div id="admin-u-list" class="space-y-3"></div>
+      </div>
+
+      <!-- Prizes / Redeem -->
+      <div id="admin-prizes" class="hide">
+        <div class="card p-4 mb-5">
+          <h3 class="font-bold mb-3 text-[#FFC107]">🎁 Add Redeem Prize</h3>
+          <div class="space-y-3">
+            <input id="prize-title" type="text" placeholder="Prize Name (e.g. 100 Diamonds)" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            <input id="prize-desc" type="text" placeholder="Short description" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            <div class="grid grid-cols-2 gap-3">
+              <input id="prize-cost" type="number" placeholder="Cost (Rs)" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+              <input id="prize-icon" type="text" placeholder="Icon emoji" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" value="🎁" />
+            </div>
+            <input id="prize-stock" type="number" placeholder="Stock (0 = unlimited)" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" value="0" />
+            <button onclick="addPrize()" class="w-full btn-yellow py-3 rounded-xl font-bold">ADD PRIZE</button>
+          </div>
+        </div>
+
+        <div class="card p-4 mb-5">
+          <h3 class="font-bold mb-3 text-yellow-400">⏳ Pending Redemptions</h3>
+          <div id="admin-redemptions-list" class="space-y-2">
+            <p class="text-gray-500 text-sm text-center">Loading...</p>
+          </div>
+        </div>
+
+        <h3 class="font-bold mb-3">All Prizes</h3>
+        <div id="admin-prizes-list" class="space-y-3"></div>
+      </div>
+
+      <!-- Admin Chats -->
+      <div id="admin-chats" class="hide">
+        <div class="card p-4 mb-5">
+          <h3 class="font-bold mb-2 text-[#FFC107]">💬 Personal Chats</h3>
+          <p class="text-xs text-gray-400 mb-3">Users jo message karte hain ya prize redeem karte hain – yahan reply karo aur prize details bhejo</p>
+          <div id="admin-chats-list" class="space-y-2">
+            <p class="text-gray-500 text-sm text-center">Loading chats...</p>
+          </div>
+        </div>
+
+        <!-- Admin Chat Conversation -->
+        <div id="admin-chat-box" class="card p-4 hide">
+          <div class="flex items-center justify-between mb-3">
+            <div>
+              <h3 id="admin-chat-user-name" class="font-bold">User</h3>
+              <p id="admin-chat-user-email" class="text-xs text-gray-400"></p>
+            </div>
+            <button onclick="closeAdminChat()" class="text-gray-400 text-sm">Close ✕</button>
+          </div>
+          <div id="admin-chat-messages" class="bg-[#0D0D0D] rounded-xl p-3 space-y-2 overflow-y-auto mb-3" style="max-height:280px;">
+            <p class="text-gray-500 text-sm text-center">No messages</p>
+          </div>
+          <div class="flex gap-2">
+            <input id="admin-chat-input" type="text" placeholder="Reply likho (prize code / details)..." 
+                   class="flex-1 bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-2.5 outline-none focus:border-[#FFC107] text-white text-sm"
+                   onkeydown="if(event.key==='Enter') sendAdminChatMessage()" />
+            <button onclick="sendAdminChatMessage()" class="btn-yellow px-4 py-2.5 rounded-xl font-bold text-sm">Send</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- More Apps -->
+      <div id="admin-apps" class="hide">
+        <div class="card p-4 mb-5">
+          <h3 class="font-bold mb-3">Add New App</h3>
+          <div class="space-y-3">
+            <input id="app-title" type="text" placeholder="App Name (e.g. AI Photo Generator)" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            <input id="app-desc" type="text" placeholder="Short description" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            <input id="app-link" type="url" placeholder="App Link (https://...)" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            <div class="grid grid-cols-2 gap-3">
+              <input id="app-icon" type="text" placeholder="Icon emoji (🖼️)" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" value="🚀" />
+              <select id="app-status" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none">
+                <option value="active">ACTIVE (OPEN button)</option>
+                <option value="soon">COMING SOON</option>
+              </select>
+            </div>
+            <button onclick="addApp()" class="w-full btn-yellow py-3 rounded-xl">ADD APP</button>
+          </div>
+        </div>
+        <div id="admin-a-list" class="space-y-3"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =====================================================
+    // 1. FIREBASE CONFIG - YAHAN APNA CONFIG PASTE KARO
+    // =====================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyA3kkkL-g_enKPvT7PgQJIRNcODXEuGNIA",
+      authDomain: "esports-ff-78aa3.firebaseapp.com",
+      projectId: "esports-ff-78aa3",
+      storageBucket: "esports-ff-78aa3.firebasestorage.app",
+      messagingSenderId: "1069033279423",
+      appId: "1:1069033279423:web:87bf6bd5c1c1b2c8b85b0a",
+      measurementId: "G-70FNPHWPSE"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.firestore();
+    // storage not used (Spark plan – no Cloud Storage)
+
+    // Admin credentials (Firestore rules ke sath better hota hai, abhi simple)
+    const ADMIN_EMAIL = "admin@ffesports.com";
+
+    let currentUser = null;
+    let isAdmin = false;
+    let unsubscribes = [];
+
+    // =====================================================
+    // SPLASH + INIT
+    // =====================================================
+    window.onload = () => {
+      document.getElementById('splash-status').textContent = 'Connecting to Firebase...';
+      
+      // Safety timeout - if Firebase takes too long, show error
+      const splashTimeout = setTimeout(() => {
+        document.getElementById('splash-status').textContent = 'Connection slow / Error. Check Console.';
+        document.getElementById('splash-status').style.color = '#FFC107';
+      }, 8000);
+
+      try {
+        auth.onAuthStateChanged(async (user) => {
+          clearTimeout(splashTimeout);
+          document.getElementById('splash').style.opacity = '0';
+          setTimeout(() => {
+            document.getElementById('splash').classList.add('hide');
+            
+            if (user) {
+              if (user.email === ADMIN_EMAIL) {
+                isAdmin = true;
+                currentUser = { name: 'Admin', email: user.email, uid: user.uid };
+                enterAdminApp();
+              } else {
+                loadUserProfile(user.uid);
+              }
+            } else {
+              document.getElementById('auth-screen').classList.remove('hide');
+            }
+          }, 400);
+        });
+      } catch (err) {
+        clearTimeout(splashTimeout);
+        document.getElementById('splash-status').textContent = 'Firebase Error: ' + err.message;
+        document.getElementById('splash-status').style.color = '#ff4444';
+      }
+    };
+
+    // Local fallback (when Firebase not configured)
+    function startLocalMode() {
+      document.getElementById('splash').style.opacity = '0';
+      setTimeout(() => {
+        document.getElementById('splash').classList.add('hide');
+        document.getElementById('auth-screen').classList.remove('hide');
+        // Use previous localStorage system as fallback
+        alert('Firebase config abhi set nahi hai.\n\nNeeche diya gaya guide follow karke Firebase setup karo, phir real-time chalega.\n\nAbhi local demo mode chal raha hai.');
+      }, 400);
+    }
+
+    // =====================================================
+    // AUTH
+    // =====================================================
+    function showSignup() {
+      document.getElementById('login-form').classList.add('hide');
+      document.getElementById('signup-form').classList.remove('hide');
+      document.getElementById('signup-form').classList.add('animate-slide');
+    }
+    function showLogin() {
+      document.getElementById('signup-form').classList.add('hide');
+      document.getElementById('login-form').classList.remove('hide');
+    }
+
+    async function doSignup() {
+      const name = document.getElementById('signup-name').value.trim();
+      const email = document.getElementById('signup-email').value.trim().toLowerCase();
+      const pass = document.getElementById('signup-pass').value;
+
+      if (!name || !email || !pass) return alert('Sab fields bharo');
+
+      try {
+        const cred = await auth.createUserWithEmailAndPassword(email, pass);
+        const uid = cred.user.uid;
+
+        // Create user profile in Firestore
+        await db.collection('users').doc(uid).set({
+          name,
+          email,
+          uid: '876' + Math.floor(Math.random() * 100000),
+          balance: 10,
+          winnings: 0,
+          bonus: 10,
+          transactions: [{
+            title: 'Welcome Bonus',
+            amount: 10,
+            type: 'credit',
+            date: new Date().toLocaleString('en-PK'),
+            status: 'Success'
+          }],
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        alert('Account ban gaya! 10 Rs Welcome Bonus mil gaya');
+        // onAuthStateChanged will handle the rest
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function doLogin() {
+      const email = document.getElementById('login-email').value.trim().toLowerCase();
+      const pass = document.getElementById('login-pass').value;
+
+      if (!email || !pass) return alert('Email aur Password dalo');
+
+      try {
+        await auth.signInWithEmailAndPassword(email, pass);
+        // onAuthStateChanged handles navigation
+      } catch (err) {
+        alert('Login failed: ' + err.message);
+      }
+    }
+
+    function logout() {
+      unsubscribes.forEach(u => u && u());
+      unsubscribes = [];
+      if (userChatUnsub) { userChatUnsub(); userChatUnsub = null; }
+      if (adminChatUnsub) { adminChatUnsub(); adminChatUnsub = null; }
+      currentAdminChatUserId = null;
+      auth.signOut();
+      document.getElementById('main-app').classList.add('hide');
+      document.getElementById('admin-app').classList.add('hide');
+      document.getElementById('auth-screen').classList.remove('hide');
+      showLogin();
+    }
+
+    async function loadUserProfile(uid) {
+      const doc = await db.collection('users').doc(uid).get();
+      if (doc.exists) {
+        currentUser = { id: uid, ...doc.data() };
+        isAdmin = false;
+        enterUserApp();
+      } else {
+        alert('Profile not found');
+        logout();
+      }
+    }
+
+    function enterUserApp() {
+      document.getElementById('auth-screen').classList.add('hide');
+      document.getElementById('admin-app').classList.add('hide');
+      document.getElementById('main-app').classList.remove('hide');
+      listenTournaments();
+      listenRooms();
+      listenApps();
+      listenPrizes();
+      updateWalletUI();
+      updateProfileUI();
+      showScreen('home');
+    }
+
+    function enterAdminApp() {
+      document.getElementById('auth-screen').classList.add('hide');
+      document.getElementById('main-app').classList.add('hide');
+      document.getElementById('admin-app').classList.remove('hide');
+      listenTournamentsAdmin();
+      listenRoomsAdmin();
+      listenUsersAdmin();
+      listenDepositsAdmin();
+      listenWithdrawalsAdmin();
+      listenRegistrationsAdmin();
+      listenPrizesAdmin();
+      listenRedemptionsAdmin();
+      listenAppsAdmin();
+      listenChatsAdmin();
+    }
+
+    function renderDepositsList(list) {
+      const el = document.getElementById('admin-deposits-list');
+      if (!el) return;
+      el.innerHTML = list.length ? list.map(item => {
+        const link = item.screenshotLink || item.screenshotUrl || '';
+        const wa = item.whatsappConfirmed ? true : false;
+        let proofHtml = '';
+        if (link) {
+          const safeLink = link.replace(/'/g, "\\'");
+          proofHtml = `
+            <a href="${link}" target="_blank" class="mt-2 inline-block text-xs text-blue-400 underline">📷 Open Screenshot Link</a>
+            ${link.match(/\\.(jpg|jpeg|png|gif|webp)(\\?|$)/i) ? `<img src="${link}" alt="SS" class="mt-2 w-20 h-20 object-cover rounded-lg border border-gray-600 cursor-pointer" onclick="viewScreenshot('${safeLink}')" />` : ''}
+          `;
+        }
+        if (wa) proofHtml += `<p class="text-xs text-green-400 mt-1">✅ WhatsApp pe screenshot bheja</p>`;
+        if (!link && !wa) proofHtml = `<p class="text-xs text-red-400 mt-1">No proof attached</p>`;
+        return `
+        <div class="bg-[#0D0D0D] rounded-xl p-3">
+          <div class="flex justify-between items-start gap-3">
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold text-sm">${item.userName || 'Player'}</p>
+              <p class="text-xs text-gray-400 truncate">${item.userEmail || ''}</p>
+              <p class="text-[#FFC107] font-bold mt-1">Rs ${item.amount}</p>
+              ${proofHtml}
+            </div>
+            <div class="flex flex-col gap-2">
+              <button onclick="approveDeposit('${item.id}', '${item.userId}', ${item.amount}, '${(item.userName || '').replace(/'/g, '')}')" 
+                      class="btn-green px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">APPROVE</button>
+              <button onclick="rejectDeposit('${item.id}')" 
+                      class="btn-red px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">REJECT</button>
+            </div>
+          </div>
+        </div>`;
+      }).join('') : '<p class="text-gray-500 text-sm text-center">No pending deposits</p>';
+    }
+
+    function listenDepositsAdmin() {
+      // Try with orderBy first; fallback without index
+      const unsub = db.collection('deposits').where('status', '==', 'pending').onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        list.sort((a, b) => {
+          const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return tb - ta;
+        });
+        renderDepositsList(list);
+      }, err => {
+        console.log('Deposits query error:', err);
+        document.getElementById('admin-deposits-list').innerHTML = '<p class="text-gray-500 text-sm text-center">No pending deposits (check Firebase rules/index)</p>';
+      });
+      unsubscribes.push(unsub);
+    }
+
+    function listenWithdrawalsAdmin() {
+      const unsub = db.collection('withdrawals').where('status', '==', 'pending').onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        list.sort((a, b) => {
+          const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return tb - ta;
+        });
+        const el = document.getElementById('admin-withdrawals-list');
+        if (!el) return;
+        el.innerHTML = list.length ? list.map(item => `
+          <div class="bg-[#0D0D0D] rounded-xl p-3">
+            <div class="flex justify-between items-start gap-3">
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold text-sm">${item.userName || 'Player'}</p>
+                <p class="text-xs text-gray-400 truncate">${item.userEmail || ''}</p>
+                <p class="text-red-400 font-bold mt-1">Rs ${item.amount}</p>
+                <p class="text-xs text-gray-300 mt-1">${item.method || ''} • ${item.accountName || ''}</p>
+                <p class="text-xs text-[#FFC107]">${item.accountNumber || ''}</p>
+                ${item.bankName ? `<p class="text-xs text-gray-400">Bank: ${item.bankName}</p>` : ''}
+              </div>
+              <div class="flex flex-col gap-2">
+                <button onclick="approveWithdraw('${item.id}', '${item.userId}', ${item.amount}, '${(item.userName || '').replace(/'/g, '')}')" 
+                        class="btn-green px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">APPROVE</button>
+                <button onclick="rejectWithdraw('${item.id}', '${item.userId}', ${item.amount})" 
+                        class="btn-red px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">REJECT</button>
+              </div>
+            </div>
+          </div>
+        `).join('') : '<p class="text-gray-500 text-sm text-center">No pending withdrawals</p>';
+      }, err => {
+        console.log('Withdrawals query error:', err);
+        const el = document.getElementById('admin-withdrawals-list');
+        if (el) el.innerHTML = '<p class="text-gray-500 text-sm text-center">No pending withdrawals</p>';
+      });
+      unsubscribes.push(unsub);
+    }
+
+    function listenRegistrationsAdmin() {
+      const unsub = db.collection('registrations').orderBy('createdAt', 'desc').limit(30).onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        const el = document.getElementById('admin-registrations-list');
+        if (!el) return;
+        el.innerHTML = list.length ? list.map(item => `
+          <div class="bg-[#0D0D0D] rounded-xl p-3 flex justify-between items-center gap-2">
+            <div class="min-w-0">
+              <p class="font-semibold text-sm truncate">${item.userName || 'Player'}</p>
+              <p class="text-xs text-gray-400 truncate">${item.tournamentTitle || 'Tournament'}</p>
+              <p class="text-xs text-[#FFC107]">Entry: ₹${item.entryFee || 0}</p>
+            </div>
+            <span class="text-xs text-green-400 whitespace-nowrap">JOINED</span>
+          </div>
+        `).join('') : '<p class="text-gray-500 text-sm text-center">No joins yet</p>';
+      }, err => {
+        console.log('Registrations query error (index may be needed):', err);
+        // Fallback without orderBy
+        db.collection('registrations').limit(30).get().then(snap => {
+          const list = [];
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          const el = document.getElementById('admin-registrations-list');
+          if (!el) return;
+          el.innerHTML = list.length ? list.map(item => `
+            <div class="bg-[#0D0D0D] rounded-xl p-3 flex justify-between items-center gap-2">
+              <div class="min-w-0">
+                <p class="font-semibold text-sm truncate">${item.userName || 'Player'}</p>
+                <p class="text-xs text-gray-400 truncate">${item.tournamentTitle || 'Tournament'}</p>
+                <p class="text-xs text-[#FFC107]">Entry: ₹${item.entryFee || 0}</p>
+              </div>
+              <span class="text-xs text-green-400 whitespace-nowrap">JOINED</span>
+            </div>
+          `).join('') : '<p class="text-gray-500 text-sm text-center">No joins yet</p>';
+        });
+      });
+      unsubscribes.push(unsub);
+    }
+
+    function viewScreenshot(url) {
+      document.getElementById('viewer-img').src = url;
+      document.getElementById('screenshot-viewer').classList.remove('hide');
+    }
+    function closeScreenshotViewer() {
+      document.getElementById('screenshot-viewer').classList.add('hide');
+      document.getElementById('viewer-img').src = '';
+    }
+
+    async function approveDeposit(depositId, userId, amount, userName) {
+      if (!confirm('Approve Rs ' + amount + ' for ' + userName + '?')) return;
+      try {
+        // Add balance to user
+        const userRef = db.collection('users').doc(userId);
+        const doc = await userRef.get();
+        if (!doc.exists) return alert('User not found');
+        const data = doc.data();
+        const newBalance = (data.balance || 0) + amount;
+        const newTx = {
+          title: 'Deposit Approved',
+          amount: amount,
+          type: 'credit',
+          date: new Date().toLocaleString('en-PK'),
+          status: 'Success'
+        };
+        // Update pending tx status if exists
+        let txs = data.transactions || [];
+        txs = txs.map(tx => {
+          if (tx.status === 'Pending' && tx.amount === amount && tx.title.includes('Pending')) {
+            return { ...tx, status: 'Success', title: 'Add Money' };
+          }
+          return tx;
+        });
+        // If no matching pending, add new
+        if (!txs.find(t => t.amount === amount && t.status === 'Success' && t.title === 'Add Money')) {
+          txs = [newTx, ...txs];
+        }
+        await userRef.update({ balance: newBalance, transactions: txs });
+        // Mark deposit as approved
+        await db.collection('deposits').doc(depositId).update({ status: 'approved' });
+        alert('Approved! Rs ' + amount + ' added to ' + userName);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function rejectDeposit(depositId) {
+      if (!confirm('Reject this deposit request?')) return;
+      await db.collection('deposits').doc(depositId).update({ status: 'rejected' });
+      alert('Deposit rejected');
+    }
+
+    async function approveWithdraw(withdrawId, userId, amount, userName) {
+      if (!confirm('Approve withdrawal Rs ' + amount + ' for ' + userName + '?\n\nBalance se cut ho jayega.')) return;
+      try {
+        const userRef = db.collection('users').doc(userId);
+        const doc = await userRef.get();
+        if (!doc.exists) return alert('User not found');
+        const data = doc.data();
+        const bal = data.balance || 0;
+        if (bal < amount) {
+          return alert('User ke paas sufficient balance nahi hai!\nBalance: ₹' + bal);
+        }
+        const newBalance = bal - amount;
+        let txs = data.transactions || [];
+        // Update any pending withdraw tx
+        txs = txs.map(tx => {
+          if (tx.status === 'Pending' && tx.amount === amount && (tx.title || '').includes('Withdraw')) {
+            return { ...tx, status: 'Success', title: 'Withdraw' };
+          }
+          return tx;
+        });
+        if (!txs.find(t => t.amount === amount && t.status === 'Success' && t.title === 'Withdraw')) {
+          txs = [{
+            title: 'Withdraw',
+            amount: amount,
+            type: 'debit',
+            date: new Date().toLocaleString('en-PK'),
+            status: 'Success'
+          }, ...txs];
+        }
+        await userRef.update({ balance: newBalance, transactions: txs });
+        await db.collection('withdrawals').doc(withdrawId).update({ status: 'approved' });
+        alert('Withdraw approved!\nRs ' + amount + ' cut from ' + userName + '\nNew Balance: ₹' + newBalance);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function rejectWithdraw(withdrawId, userId, amount) {
+      if (!confirm('Reject this withdrawal request?')) return;
+      try {
+        // Mark any pending tx as Rejected
+        const userRef = db.collection('users').doc(userId);
+        const doc = await userRef.get();
+        if (doc.exists) {
+          let txs = (doc.data().transactions || []).map(tx => {
+            if (tx.status === 'Pending' && tx.amount === amount && (tx.title || '').includes('Withdraw')) {
+              return { ...tx, status: 'Rejected', title: 'Withdraw (Rejected)' };
+            }
+            return tx;
+          });
+          await userRef.update({ transactions: txs });
+        }
+        await db.collection('withdrawals').doc(withdrawId).update({ status: 'rejected' });
+        alert('Withdrawal rejected');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // =====================================================
+    // REAL-TIME LISTENERS
+    // =====================================================
+    function listenTournaments() {
+      const unsub = db.collection('tournaments').orderBy('createdAt', 'desc').onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        renderTournaments(list);
+      });
+      unsubscribes.push(unsub);
+    }
+
+    function listenRooms() {
+      const unsub = db.collection('rooms').orderBy('createdAt', 'desc').onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        renderRoomsForUser(list);
+      });
+      unsubscribes.push(unsub);
+    }
+
+    function listenTournamentsAdmin() {
+      const unsub = db.collection('tournaments').orderBy('createdAt', 'desc').onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        document.getElementById('admin-t-count').textContent = list.length;
+        document.getElementById('admin-t-list').innerHTML = list.map(item => `
+          <div class="card p-4 flex justify-between items-center animate-fade">
+            <div>
+              <p class="font-bold">${item.title}</p>
+              <p class="text-xs text-gray-400">${item.mode} • ${item.date} • ₹${item.entry} → ₹${item.prize}</p>
+            </div>
+            <button onclick="deleteTournament('${item.id}')" class="btn-red px-3 py-1.5 rounded-lg text-sm">DELETE</button>
+          </div>
+        `).join('') || '<p class="text-gray-500 text-center">No tournaments</p>';
+      });
+      unsubscribes.push(unsub);
+    }
+
+    function listenRoomsAdmin() {
+      const unsub = db.collection('rooms').orderBy('createdAt', 'desc').onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        document.getElementById('admin-r-count').textContent = list.length;
+        document.getElementById('admin-r-list').innerHTML = list.map(item => `
+          <div class="card p-4 animate-fade">
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="font-bold">${item.title}</p>
+                <p class="text-xs text-gray-400">${item.mode} • ${item.map}</p>
+                <p class="text-lg font-bold text-[#FFC107] mt-1">Room ID: ${item.roomId}</p>
+              </div>
+              <button onclick="deleteRoom('${item.id}')" class="btn-red px-3 py-1.5 rounded-lg text-sm">DELETE</button>
+            </div>
+          </div>
+        `).join('') || '<p class="text-gray-500 text-center">No rooms</p>';
+      });
+      unsubscribes.push(unsub);
+    }
+
+    function listenUsersAdmin() {
+      const unsub = db.collection('users').onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        document.getElementById('admin-u-count').textContent = list.length;
+        document.getElementById('admin-u-list').innerHTML = list.map(item => `
+          <div class="card p-4 animate-fade">
+            <div class="flex justify-between items-start gap-3">
+              <div class="flex-1">
+                <p class="font-bold">${item.name || 'No Name'}</p>
+                <p class="text-xs text-gray-400">${item.email || '-'} • UID: ${item.uid || '-'}</p>
+                <p class="text-sm text-green-400 mt-1">Balance: ₹${item.balance || 0} • Winnings: ₹${item.winnings || 0}</p>
+                ${item.createdBy === 'admin' ? '<span class="text-xs text-purple-400">Created by Admin</span>' : ''}
+              </div>
+              <div class="flex flex-col gap-2">
+                <button onclick="adminAddBalance('${item.id}', '${(item.name || 'User').replace(/'/g, '')}')" 
+                        class="btn-green px-3 py-2 rounded-lg text-xs whitespace-nowrap">
+                  + ADD BALANCE
+                </button>
+                <button onclick="adminDeleteUser('${item.id}', '${(item.name || 'User').replace(/'/g, '')}')" 
+                        class="btn-red px-3 py-2 rounded-lg text-xs whitespace-nowrap">
+                  DELETE
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join('') || '<p class="text-gray-500 text-center">No users</p>';
+      });
+      unsubscribes.push(unsub);
+    }
+
+    // =====================================================
+    // RENDER FUNCTIONS
+    // =====================================================
+    function renderTournaments(list) {
+      const joined = (currentUser && currentUser.joinedTournaments) ? currentUser.joinedTournaments : [];
+      const html = list.map(t => {
+        const already = joined.includes(t.id);
+        const fee = t.entry || 0;
+        return `
+        <div class="card p-4 flex gap-3 items-center animate-fade">
+          <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-700 to-indigo-800 flex items-center justify-center text-xl">🏆</div>
+          <div class="flex-1">
+            <div class="flex items-center gap-2">
+              <span class="bg-purple-700 text-xs px-2 py-0.5 rounded font-semibold">${t.mode}</span>
+              <span class="text-xs text-gray-400">${t.date}</span>
+            </div>
+            <h4 class="font-bold mt-1">${t.title}</h4>
+            <div class="flex gap-3 text-xs text-gray-400 mt-1">
+              <span>${t.slots || ''}</span>
+              <span>₹${fee} ENTRY</span>
+              <span class="text-[#FFC107]">₹${t.prize} PRIZE</span>
+            </div>
+          </div>
+          ${already
+            ? `<button class="bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-semibold" disabled>JOINED</button>`
+            : `<button onclick="joinTournament('${t.id}', ${fee}, '${(t.title || '').replace(/'/g, "\\'")}')" class="btn-yellow px-4 py-2 rounded-lg text-sm">JOIN</button>`
+          }
+        </div>`;
+      }).join('');
+      document.getElementById('home-tournaments').innerHTML = html || '<p class="text-gray-500 text-center py-6">No tournaments yet</p>';
+      document.getElementById('all-tournaments').innerHTML = html || '<p class="text-gray-500 text-center py-6">No tournaments yet</p>';
+    }
+
+    async function joinTournament(tournamentId, entryFee, title) {
+      if (!currentUser || !currentUser.id) {
+        return alert('Pehle login karo');
+      }
+
+      const fee = parseFloat(entryFee) || 0;
+      const joined = currentUser.joinedTournaments || [];
+
+      if (joined.includes(tournamentId)) {
+        return alert('Aap already is tournament me join ho chuke ho');
+      }
+
+      if (fee <= 0) {
+        // Free tournament
+        if (!confirm('Free tournament join karein?\n\n' + title)) return;
+      } else {
+        const bal = currentUser.balance || 0;
+        if (bal < fee) {
+          return alert('Balance kam hai!\n\nEntry Fee: ₹' + fee + '\nAapka Balance: ₹' + bal.toFixed(2) + '\n\nPehle Wallet se money add karo.');
+        }
+        if (!confirm('JOIN Tournament?\n\n' + title + '\n\nEntry Fee: ₹' + fee + '\nBalance se cut ho jayega.\n\nContinue?')) return;
+      }
+
+      try {
+        const userRef = db.collection('users').doc(currentUser.id);
+        const newBalance = (currentUser.balance || 0) - fee;
+        const newTx = fee > 0 ? {
+          title: 'Joined: ' + title,
+          amount: fee,
+          type: 'debit',
+          date: new Date().toLocaleString('en-PK'),
+          status: 'Success'
+        } : null;
+
+        let txs = currentUser.transactions || [];
+        if (newTx) txs = [newTx, ...txs];
+
+        const newJoined = [...joined, tournamentId];
+
+        const updateData = {
+          joinedTournaments: newJoined,
+          transactions: txs
+        };
+        if (fee > 0) updateData.balance = newBalance;
+
+        await userRef.update(updateData);
+
+        // Also save registration record for admin
+        await db.collection('registrations').add({
+          tournamentId,
+          tournamentTitle: title,
+          userId: currentUser.id,
+          userName: currentUser.name || 'Player',
+          userEmail: currentUser.email || '',
+          entryFee: fee,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        currentUser.balance = fee > 0 ? newBalance : currentUser.balance;
+        currentUser.transactions = txs;
+        currentUser.joinedTournaments = newJoined;
+        updateWalletUI();
+
+        // Re-render tournaments to show JOINED
+        db.collection('tournaments').orderBy('createdAt', 'desc').get().then(snap => {
+          const list = [];
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          renderTournaments(list);
+        });
+
+        // Free Fire style success modal
+        document.getElementById('join-success-title').textContent = title;
+        document.getElementById('join-success-fee').textContent = '₹' + fee;
+        document.getElementById('join-success-balance').textContent = '₹' + (fee > 0 ? newBalance.toFixed(2) : (currentUser.balance || 0).toFixed(2));
+        // Show latest room ID if available
+        const roomEl = document.getElementById('current-room-id');
+        const roomId = roomEl ? roomEl.textContent : '------';
+        document.getElementById('join-success-room').textContent = (roomId && roomId !== '------') ? roomId : 'Waiting for Room ID...';
+        document.getElementById('join-success-modal').classList.remove('hide');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    function closeJoinSuccessModal() {
+      document.getElementById('join-success-modal').classList.add('hide');
+    }
+
+    function renderRoomsForUser(list) {
+      if (list.length === 0) {
+        document.getElementById('active-rooms').innerHTML = '<p class="text-gray-500 text-center py-4">No active rooms</p>';
+        document.getElementById('current-room-id').textContent = '------';
+        return;
+      }
+      const latest = list[0];
+      document.getElementById('current-room-id').textContent = latest.roomId;
+      document.getElementById('room-mode').textContent = latest.mode;
+      document.getElementById('room-map').textContent = latest.map;
+      document.getElementById('room-players').textContent = latest.players;
+      document.getElementById('room-fee').textContent = '₹' + latest.entry;
+      document.getElementById('room-prize').textContent = '₹' + latest.prize;
+
+      document.getElementById('active-rooms').innerHTML = list.map(r => `
+        <div class="card p-4 animate-fade">
+          <p class="font-bold">${r.title}</p>
+          <p class="text-xs text-gray-400">${r.mode} • ${r.map}</p>
+          <p class="text-sm mt-1">Room ID: <span class="text-[#FFC107] font-bold">${r.roomId}</span></p>
+        </div>
+      `).join('');
+    }
+
+    function copyRoomId() {
+      const id = document.getElementById('current-room-id').textContent;
+      if (id === '------') return;
+      navigator.clipboard.writeText(id);
+      alert('Room ID copied: ' + id);
+    }
+
+    function updateWalletUI() {
+      if (!currentUser) return;
+      document.getElementById('wallet-balance').textContent = '₹' + (currentUser.balance || 0).toFixed(2);
+      document.getElementById('wallet-winnings').textContent = '₹' + (currentUser.winnings || 0).toFixed(2);
+      document.getElementById('wallet-bonus').textContent = '₹' + (currentUser.bonus || 0).toFixed(2);
+      const list = document.getElementById('tx-list');
+      list.innerHTML = (currentUser.transactions || []).map(tx => {
+        const statusColor = tx.status === 'Pending' ? 'text-yellow-400' : (tx.status === 'Rejected' ? 'text-red-400' : 'text-green-500');
+        return `
+        <div class="flex justify-between items-center px-4 py-3.5">
+          <div><p class="font-semibold">${tx.title}</p><p class="text-xs text-gray-400">${tx.date}</p></div>
+          <div class="text-right">
+            <p class="font-bold ${tx.type === 'credit' ? 'text-green-400' : 'text-red-400'}">${tx.type === 'credit' ? '+' : '-'}₹${Math.abs(tx.amount)}</p>
+            <p class="text-xs ${statusColor}">${tx.status}</p>
+          </div>
+        </div>`;
+      }).join('') || '<p class="text-center text-gray-500 py-4">No transactions</p>';
+    }
+
+    function updateProfileUI() {
+      if (!currentUser) return;
+      document.getElementById('profile-name').textContent = currentUser.name || 'Player';
+      document.getElementById('profile-uid').textContent = currentUser.uid || '----';
+      
+      // Free Fire ID
+      const ffidEl = document.getElementById('profile-ffid');
+      if (ffidEl) ffidEl.textContent = currentUser.ffId || 'Not set';
+      
+      // FF ID input value
+      const ffInput = document.getElementById('ff-id-input');
+      if (ffInput) ffInput.value = currentUser.ffId || '';
+
+      // Profile Picture
+      const pic = document.getElementById('profile-pic');
+      const placeholder = document.getElementById('profile-pic-placeholder');
+      if (currentUser.profilePic) {
+        pic.src = currentUser.profilePic;
+        pic.classList.remove('hide');
+        if (placeholder) placeholder.classList.add('hide');
+      } else {
+        pic.classList.add('hide');
+        if (placeholder) placeholder.classList.remove('hide');
+      }
+    }
+
+    // Profile Pic Preview (base64)
+    let pendingProfilePic = null;
+    function previewProfilePic(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (file.size > 400 * 1024) {
+        alert('Photo thodi bari hai. 300KB se chhoti photo choose karo.');
+        event.target.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        pendingProfilePic = e.target.result;
+        const pic = document.getElementById('profile-pic');
+        const placeholder = document.getElementById('profile-pic-placeholder');
+        pic.src = pendingProfilePic;
+        pic.classList.remove('hide');
+        if (placeholder) placeholder.classList.add('hide');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function saveProfile() {
+      if (!currentUser || !currentUser.id) return alert('Pehle login karo');
+
+      const ffId = (document.getElementById('ff-id-input').value || '').trim();
+      const updateData = {};
+
+      if (ffId) updateData.ffId = ffId;
+      if (pendingProfilePic) updateData.profilePic = pendingProfilePic;
+
+      if (Object.keys(updateData).length === 0) {
+        return alert('Kuch change nahi kiya');
+      }
+
+      try {
+        await db.collection('users').doc(currentUser.id).update(updateData);
+        
+        // Update local currentUser
+        if (ffId) currentUser.ffId = ffId;
+        if (pendingProfilePic) {
+          currentUser.profilePic = pendingProfilePic;
+          pendingProfilePic = null;
+        }
+        
+        updateProfileUI();
+        alert('Profile save ho gaya!');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // ===== DEPOSIT (no Storage) – user cannot add money themselves =====
+    function addMoney() {
+      document.getElementById('deposit-amount').value = '';
+      document.getElementById('deposit-link').value = '';
+      document.getElementById('deposit-wa-confirm').checked = false;
+      document.getElementById('deposit-modal').classList.remove('hide');
+    }
+
+    function closeDepositModal() {
+      document.getElementById('deposit-modal').classList.add('hide');
+    }
+
+    async function submitDepositRequest() {
+      const amountInput = document.getElementById('deposit-amount').value;
+      const link = (document.getElementById('deposit-link').value || '').trim();
+      const waConfirm = document.getElementById('deposit-wa-confirm').checked;
+
+      if (!amountInput || isNaN(amountInput) || parseFloat(amountInput) <= 0) {
+        return alert('Sahi amount dalo (Rs)');
+      }
+      if (!link && !waConfirm) {
+        return alert('Proof zaroori hai!\n\nYa to screenshot ka link paste karo,\nYa checkbox tick karo ke WhatsApp pe screenshot bhej diya.');
+      }
+
+      const val = parseFloat(amountInput);
+      const btn = document.getElementById('submit-deposit-btn');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      try {
+        await db.collection('deposits').add({
+          userId: currentUser.id,
+          userName: currentUser.name || 'Player',
+          userEmail: currentUser.email || '',
+          amount: val,
+          screenshotLink: link || null,
+          whatsappConfirmed: waConfirm,
+          status: 'pending',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        const newTx = {
+          title: 'Add Money (Pending)',
+          amount: val,
+          type: 'credit',
+          date: new Date().toLocaleString('en-PK'),
+          status: 'Pending'
+        };
+        const txs = [newTx, ...(currentUser.transactions || [])];
+        await db.collection('users').doc(currentUser.id).update({
+          transactions: txs
+        });
+        currentUser.transactions = txs;
+        updateWalletUI();
+
+        closeDepositModal();
+        alert('Request bhej di gayi!\n\nAdmin check karke balance add karega.\nAmount: Rs ' + val +
+          (waConfirm ? '\n\nWhatsApp pe screenshot bhejna mat bhoolna agar abhi nahi bheja.' : ''));
+      } catch (err) {
+        console.error(err);
+        alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'SUBMIT REQUEST';
+      }
+    }
+
+    // ===== WITHDRAW =====
+    function openWithdrawModal() {
+      if (!currentUser) return alert('Pehle login karo');
+      document.getElementById('withdraw-amount').value = '';
+      document.getElementById('withdraw-name').value = currentUser.name || '';
+      document.getElementById('withdraw-number').value = '';
+      document.getElementById('withdraw-bank').value = '';
+      document.getElementById('withdraw-method').value = 'EasyPaisa';
+      document.getElementById('withdraw-modal').classList.remove('hide');
+    }
+
+    function closeWithdrawModal() {
+      document.getElementById('withdraw-modal').classList.add('hide');
+    }
+
+    async function submitWithdrawRequest() {
+      if (!currentUser || !currentUser.id) return alert('Pehle login karo');
+
+      const amountInput = document.getElementById('withdraw-amount').value;
+      const method = document.getElementById('withdraw-method').value;
+      const accountName = (document.getElementById('withdraw-name').value || '').trim();
+      const accountNumber = (document.getElementById('withdraw-number').value || '').trim();
+      const bankName = (document.getElementById('withdraw-bank').value || '').trim();
+
+      if (!amountInput || isNaN(amountInput) || parseFloat(amountInput) < 50) {
+        return alert('Minimum withdraw ₹50 hai. Sahi amount dalo.');
+      }
+      if (!accountName || !accountNumber) {
+        return alert('Account Title aur Number zaroori hain');
+      }
+
+      const val = parseFloat(amountInput);
+      const bal = currentUser.balance || 0;
+      if (bal < val) {
+        return alert('Balance kam hai!\n\nAapka Balance: ₹' + bal.toFixed(2) + '\nWithdraw: ₹' + val);
+      }
+
+      if (!confirm('Withdraw request bhejein?\n\nAmount: ₹' + val + '\n' + method + '\n' + accountName + '\n' + accountNumber + '\n\nAdmin approve karega tab balance cut hoga.')) return;
+
+      const btn = document.getElementById('submit-withdraw-btn');
+      btn.disabled = true;
+      btn.textContent = 'Submitting...';
+
+      try {
+        await db.collection('withdrawals').add({
+          userId: currentUser.id,
+          userName: currentUser.name || 'Player',
+          userEmail: currentUser.email || '',
+          amount: val,
+          method,
+          accountName,
+          accountNumber,
+          bankName: bankName || null,
+          status: 'pending',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        const newTx = {
+          title: 'Withdraw Request (Pending)',
+          amount: val,
+          type: 'debit',
+          date: new Date().toLocaleString('en-PK'),
+          status: 'Pending'
+        };
+        const txs = [newTx, ...(currentUser.transactions || [])];
+        await db.collection('users').doc(currentUser.id).update({ transactions: txs });
+        currentUser.transactions = txs;
+        updateWalletUI();
+
+        closeWithdrawModal();
+        alert('Withdraw request bhej di gayi!\n\nAdmin check karke paise bhejega.\nAmount: Rs ' + val + '\nStatus: Pending');
+      } catch (err) {
+        console.error(err);
+        alert('Error: ' + err.message);
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'SUBMIT WITHDRAW REQUEST';
+      }
+    }
+
+    async function adminAddBalance(userId, userName) {
+      const amount = prompt(userName + ' ke account me kitne Rs add karne hain?', '100');
+      if (!amount || isNaN(amount) || amount <= 0) return;
+      const val = parseFloat(amount);
+
+      try {
+        const userRef = db.collection('users').doc(userId);
+        const doc = await userRef.get();
+        if (!doc.exists) return alert('User not found');
+
+        const data = doc.data();
+        const newBalance = (data.balance || 0) + val;
+        const newTx = {
+          title: 'Balance Added by Admin',
+          amount: val,
+          type: 'credit',
+          date: new Date().toLocaleString('en-PK'),
+          status: 'Success'
+        };
+        const txs = [newTx, ...(data.transactions || [])];
+
+        await userRef.update({
+          balance: newBalance,
+          transactions: txs
+        });
+
+        alert('₹' + val + ' successfully add ho gaya!\n\n' + userName + '\nNew Balance: ₹' + newBalance);
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function adminDeleteUser(userId, userName) {
+      if (!confirm('Kya aap "' + userName + '" ko permanently delete karna chahte hain?\n\nYe action undo nahi ho sakta.')) return;
+      if (!confirm('Confirm again: User delete ho jayega. Continue?')) return;
+
+      try {
+        await db.collection('users').doc(userId).delete();
+        alert('User "' + userName + '" delete ho gaya!');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // =====================================================
+    // ADMIN ACTIONS
+    // =====================================================
+    function adminTab(name) {
+      document.getElementById('admin-tournaments').classList.add('hide');
+      document.getElementById('admin-rooms').classList.add('hide');
+      document.getElementById('admin-users').classList.add('hide');
+      document.getElementById('admin-prizes').classList.add('hide');
+      document.getElementById('admin-chats').classList.add('hide');
+      document.getElementById('admin-apps').classList.add('hide');
+      document.getElementById('tab-t').className = 'bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap';
+      document.getElementById('tab-r').className = 'bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap';
+      document.getElementById('tab-u').className = 'bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap';
+      document.getElementById('tab-p').className = 'bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap';
+      document.getElementById('tab-c').className = 'bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap';
+      document.getElementById('tab-a').className = 'bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap';
+      if (name === 'tournaments') {
+        document.getElementById('admin-tournaments').classList.remove('hide');
+        document.getElementById('tab-t').className = 'bg-[#7B2CBF] px-4 py-2 rounded-full whitespace-nowrap';
+      } else if (name === 'rooms') {
+        document.getElementById('admin-rooms').classList.remove('hide');
+        document.getElementById('tab-r').className = 'bg-[#7B2CBF] px-4 py-2 rounded-full whitespace-nowrap';
+      } else if (name === 'users') {
+        document.getElementById('admin-users').classList.remove('hide');
+        document.getElementById('tab-u').className = 'bg-[#7B2CBF] px-4 py-2 rounded-full whitespace-nowrap';
+      } else if (name === 'prizes') {
+        document.getElementById('admin-prizes').classList.remove('hide');
+        document.getElementById('tab-p').className = 'bg-[#7B2CBF] px-4 py-2 rounded-full whitespace-nowrap';
+      } else if (name === 'chats') {
+        document.getElementById('admin-chats').classList.remove('hide');
+        document.getElementById('tab-c').className = 'bg-[#7B2CBF] px-4 py-2 rounded-full whitespace-nowrap';
+      } else if (name === 'apps') {
+        document.getElementById('admin-apps').classList.remove('hide');
+        document.getElementById('tab-a').className = 'bg-[#7B2CBF] px-4 py-2 rounded-full whitespace-nowrap';
+      }
+    }
+
+    async function addTournament() {
+      const title = document.getElementById('t-title').value.trim();
+      const mode = document.getElementById('t-mode').value;
+      const date = document.getElementById('t-date').value.trim();
+      const entry = parseFloat(document.getElementById('t-entry').value) || 0;
+      const prize = parseFloat(document.getElementById('t-prize').value) || 0;
+      const slots = document.getElementById('t-slots').value.trim();
+      if (!title || !date) return alert('Title aur Date zaroori hain');
+
+      await db.collection('tournaments').add({
+        title, mode, date, entry, prize, slots,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      alert('Tournament live add ho gaya!');
+      document.getElementById('t-title').value = '';
+      document.getElementById('t-date').value = '';
+      document.getElementById('t-entry').value = '';
+      document.getElementById('t-prize').value = '';
+      document.getElementById('t-slots').value = '';
+    }
+
+    async function deleteTournament(id) {
+      if (!confirm('Delete this tournament?')) return;
+      await db.collection('tournaments').doc(id).delete();
+    }
+
+    async function createRoom() {
+      const title = document.getElementById('r-title').value.trim();
+      const mode = document.getElementById('r-mode').value;
+      const map = document.getElementById('r-map').value;
+      const entry = parseFloat(document.getElementById('r-entry').value) || 0;
+      const prize = parseFloat(document.getElementById('r-prize').value) || 0;
+      const players = document.getElementById('r-players').value.trim() || '8/8';
+      if (!title) return alert('Room Title zaroori hai');
+
+      const roomId = Math.floor(1000000 + Math.random() * 9000000).toString();
+
+      await db.collection('rooms').add({
+        title, mode, map, entry, prize, players, roomId,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      alert('Room create ho gaya!\n\nRoom ID: ' + roomId);
+      document.getElementById('r-title').value = '';
+      document.getElementById('r-entry').value = '';
+      document.getElementById('r-prize').value = '';
+    }
+
+    async function deleteRoom(id) {
+      if (!confirm('Delete this room?')) return;
+      await db.collection('rooms').doc(id).delete();
+    }
+
+    // ===== MORE APPS (Admin + User) =====
+    async function addApp() {
+      const title = document.getElementById('app-title').value.trim();
+      const desc = document.getElementById('app-desc').value.trim();
+      const link = document.getElementById('app-link').value.trim();
+      const icon = document.getElementById('app-icon').value.trim() || '🚀';
+      const status = document.getElementById('app-status').value;
+      if (!title) return alert('App Name zaroori hai');
+      if (status === 'active' && !link) return alert('Active app ke liye Link zaroori hai');
+
+      await db.collection('apps').add({
+        title,
+        desc: desc || '',
+        link: link || '',
+        icon,
+        status,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      alert('App add ho gaya!');
+      document.getElementById('app-title').value = '';
+      document.getElementById('app-desc').value = '';
+      document.getElementById('app-link').value = '';
+      document.getElementById('app-icon').value = '🚀';
+      document.getElementById('app-status').value = 'active';
+    }
+
+    async function deleteApp(id) {
+      if (!confirm('Is app ko delete karein?')) return;
+      await db.collection('apps').doc(id).delete();
+    }
+
+    function listenAppsAdmin() {
+      const unsub = db.collection('apps').orderBy('createdAt', 'desc').onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        const el = document.getElementById('admin-a-list');
+        if (!el) return;
+        el.innerHTML = list.length ? list.map(item => `
+          <div class="card p-4 flex justify-between items-center animate-fade">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">${item.icon || '🚀'}</span>
+              <div>
+                <p class="font-bold">${item.title}</p>
+                <p class="text-xs text-gray-400">${item.desc || ''} • ${item.status === 'active' ? 'ACTIVE' : 'SOON'}</p>
+                ${item.link ? `<p class="text-xs text-blue-400 truncate max-w-[180px]">${item.link}</p>` : ''}
+              </div>
+            </div>
+            <button onclick="deleteApp('${item.id}')" class="btn-red px-3 py-1.5 rounded-lg text-sm">DELETE</button>
+          </div>
+        `).join('') : '<p class="text-gray-500 text-center">No apps added yet</p>';
+      });
+      unsubscribes.push(unsub);
+    }
+
+    function listenApps() {
+      const unsub = db.collection('apps').orderBy('createdAt', 'desc').onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        const el = document.getElementById('more-apps-list');
+        if (!el) return;
+
+        // Always keep current FF Esports card first
+        let html = `
+          <div class="card p-4 flex items-center gap-4">
+            <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center text-2xl">🎮</div>
+            <div class="flex-1">
+              <h3 class="font-bold">FF Esports</h3>
+              <p class="text-xs text-gray-400">Yeh app (current)</p>
+            </div>
+            <span class="bg-green-700 text-white px-3 py-1.5 rounded-lg text-xs font-bold">ACTIVE</span>
+          </div>`;
+
+        list.forEach(item => {
+          const isActive = item.status === 'active';
+          html += `
+            <div class="card p-4 flex items-center gap-4 ${isActive ? '' : 'opacity-60'}">
+              <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center text-2xl">${item.icon || '🚀'}</div>
+              <div class="flex-1">
+                <h3 class="font-bold">${item.title}</h3>
+                <p class="text-xs text-gray-400">${item.desc || ''}</p>
+              </div>
+              ${isActive && item.link
+                ? `<a href="${item.link}" target="_blank" class="btn-yellow px-4 py-2 rounded-lg text-sm font-bold">OPEN</a>`
+                : `<span class="bg-gray-700 text-gray-300 px-3 py-1.5 rounded-lg text-xs">${isActive ? 'ACTIVE' : 'SOON'}</span>`
+              }
+            </div>`;
+        });
+
+        el.innerHTML = html;
+      });
+      unsubscribes.push(unsub);
+    }
+
+    // ===== REDEEM PRIZES =====
+    async function addPrize() {
+      const title = document.getElementById('prize-title').value.trim();
+      const desc = document.getElementById('prize-desc').value.trim();
+      const cost = parseFloat(document.getElementById('prize-cost').value) || 0;
+      const icon = document.getElementById('prize-icon').value.trim() || '🎁';
+      const stock = parseInt(document.getElementById('prize-stock').value) || 0;
+      if (!title) return alert('Prize Name zaroori hai');
+      if (cost <= 0) return alert('Cost 0 se zyada hona chahiye');
+
+      await db.collection('prizes').add({
+        title,
+        desc: desc || '',
+        cost,
+        icon,
+        stock,
+        active: true,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      alert('Prize add ho gaya!');
+      document.getElementById('prize-title').value = '';
+      document.getElementById('prize-desc').value = '';
+      document.getElementById('prize-cost').value = '';
+      document.getElementById('prize-icon').value = '🎁';
+      document.getElementById('prize-stock').value = '0';
+    }
+
+    async function deletePrize(id) {
+      if (!confirm('Is prize ko delete karein?')) return;
+      await db.collection('prizes').doc(id).delete();
+    }
+
+    function listenPrizesAdmin() {
+      const unsub = db.collection('prizes').orderBy('createdAt', 'desc').onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        const el = document.getElementById('admin-prizes-list');
+        if (!el) return;
+        el.innerHTML = list.length ? list.map(item => `
+          <div class="card p-4 flex justify-between items-center animate-fade">
+            <div class="flex items-center gap-3">
+              <span class="text-2xl">${item.icon || '🎁'}</span>
+              <div>
+                <p class="font-bold">${item.title}</p>
+                <p class="text-xs text-gray-400">${item.desc || ''} • Cost: ₹${item.cost}</p>
+                <p class="text-xs text-gray-500">Stock: ${item.stock === 0 ? 'Unlimited' : item.stock}</p>
+              </div>
+            </div>
+            <button onclick="deletePrize('${item.id}')" class="btn-red px-3 py-1.5 rounded-lg text-sm">DELETE</button>
+          </div>
+        `).join('') : '<p class="text-gray-500 text-center">No prizes yet</p>';
+      }, err => {
+        console.log('Prizes admin error:', err);
+        db.collection('prizes').get().then(snap => {
+          const list = [];
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          const el = document.getElementById('admin-prizes-list');
+          if (!el) return;
+          el.innerHTML = list.length ? list.map(item => `
+            <div class="card p-4 flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                <span class="text-2xl">${item.icon || '🎁'}</span>
+                <div>
+                  <p class="font-bold">${item.title}</p>
+                  <p class="text-xs text-gray-400">Cost: ₹${item.cost}</p>
+                </div>
+              </div>
+              <button onclick="deletePrize('${item.id}')" class="btn-red px-3 py-1.5 rounded-lg text-sm">DELETE</button>
+            </div>
+          `).join('') : '<p class="text-gray-500 text-center">No prizes yet</p>';
+        });
+      });
+      unsubscribes.push(unsub);
+    }
+
+    function listenRedemptionsAdmin() {
+      const unsub = db.collection('redemptions').where('status', '==', 'pending').onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        list.sort((a, b) => {
+          const ta = a.createdAt?.toMillis ? a.createdAt.toMillis() : 0;
+          const tb = b.createdAt?.toMillis ? b.createdAt.toMillis() : 0;
+          return tb - ta;
+        });
+        const el = document.getElementById('admin-redemptions-list');
+        if (!el) return;
+        el.innerHTML = list.length ? list.map(item => `
+          <div class="bg-[#0D0D0D] rounded-xl p-3">
+            <div class="flex justify-between items-start gap-3">
+              <div class="flex-1 min-w-0">
+                <p class="font-semibold text-sm">${item.userName || 'Player'}</p>
+                <p class="text-xs text-gray-400 truncate">${item.userEmail || ''}</p>
+                <p class="text-[#FFC107] font-bold mt-1">${item.prizeTitle || 'Prize'} • ₹${item.cost || 0}</p>
+              </div>
+              <div class="flex flex-col gap-2">
+                <button onclick="adminTab('chats'); openAdminChat('${item.userId}', '${(item.userName || 'Player').replace(/'/g, "\\'")}', '${(item.userEmail || '').replace(/'/g, "\\'")}');" 
+                        class="btn-purple px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">💬 CHAT</button>
+                <button onclick="approveRedemption('${item.id}')" class="btn-green px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">DONE</button>
+                <button onclick="rejectRedemption('${item.id}')" class="btn-red px-3 py-1.5 rounded-lg text-xs whitespace-nowrap">CANCEL</button>
+              </div>
+            </div>
+          </div>
+        `).join('') : '<p class="text-gray-500 text-sm text-center">No pending redemptions</p>';
+      }, err => {
+        console.log('Redemptions error:', err);
+        const el = document.getElementById('admin-redemptions-list');
+        if (el) el.innerHTML = '<p class="text-gray-500 text-sm text-center">No pending redemptions</p>';
+      });
+      unsubscribes.push(unsub);
+    }
+
+    async function approveRedemption(id) {
+      if (!confirm('Prize deliver / complete mark karein?')) return;
+      await db.collection('redemptions').doc(id).update({ status: 'completed' });
+      alert('Marked as completed!');
+    }
+
+    async function rejectRedemption(id) {
+      if (!confirm('Is redemption ko cancel karein? (Balance refund nahi hoga auto – manually handle karo)')) return;
+      await db.collection('redemptions').doc(id).update({ status: 'cancelled' });
+      alert('Cancelled');
+    }
+
+    function listenPrizes() {
+      const unsub = db.collection('prizes').orderBy('createdAt', 'desc').onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        renderPrizesForUser(list);
+      }, err => {
+        console.log('Prizes user error:', err);
+        db.collection('prizes').get().then(snap => {
+          const list = [];
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          renderPrizesForUser(list);
+        });
+      });
+      unsubscribes.push(unsub);
+    }
+
+    function renderPrizesForUser(list) {
+      const el = document.getElementById('redeem-prizes-list');
+      if (!el) return;
+      const active = list.filter(p => p.active !== false);
+      if (!active.length) {
+        el.innerHTML = '<p class="text-gray-500 text-center py-8">Abhi koi prize available nahi</p>';
+        return;
+      }
+      el.innerHTML = active.map(p => {
+        const stock = typeof p.stock === 'number' ? p.stock : 0;
+        const stockText = stock === 0 ? 'Unlimited' : (stock + ' left');
+        const isSoldOut = stock !== 0 && stock <= 0;
+        return `
+        <div class="card p-4 flex gap-3 items-center animate-fade ${isSoldOut ? 'opacity-50' : ''}">
+          <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-yellow-600 to-orange-700 flex items-center justify-center text-2xl flex-shrink-0">${p.icon || '🎁'}</div>
+          <div class="flex-1 min-w-0">
+            <h4 class="font-bold truncate">${p.title}</h4>
+            <p class="text-xs text-gray-400 truncate">${p.desc || ''}</p>
+            <div class="flex gap-3 text-xs mt-1">
+              <span class="text-[#FFC107] font-bold">₹${p.cost}</span>
+              <span class="text-gray-500">${stockText}</span>
+            </div>
+          </div>
+          ${isSoldOut
+            ? `<button class="bg-gray-700 text-gray-400 px-4 py-2 rounded-lg text-sm font-semibold" disabled>SOLD OUT</button>`
+            : `<button onclick="redeemPrize('${p.id}', ${p.cost}, '${(p.title || '').replace(/'/g, "\\'")}')" class="btn-yellow px-4 py-2 rounded-lg text-sm font-bold">REDEEM</button>`
+          }
+        </div>`;
+      }).join('');
+    }
+
+    async function redeemPrize(prizeId, cost, title) {
+      if (!currentUser || !currentUser.id) return alert('Pehle login karo');
+      const fee = parseFloat(cost) || 0;
+      const bal = currentUser.balance || 0;
+      if (bal < fee) {
+        return alert('Balance kam hai!\n\nPrize: ₹' + fee + '\nAapka Balance: ₹' + bal.toFixed(2) + '\n\nPehle Wallet se money add karo.');
+      }
+      if (!confirm('Redeem karein?\n\n' + title + '\nCost: ₹' + fee + '\n\nBalance se cut ho jayega.')) return;
+
+      try {
+        const userRef = db.collection('users').doc(currentUser.id);
+        const newBalance = bal - fee;
+        const newTx = {
+          title: 'Redeemed: ' + title,
+          amount: fee,
+          type: 'debit',
+          date: new Date().toLocaleString('en-PK'),
+          status: 'Success'
+        };
+        const txs = [newTx, ...(currentUser.transactions || [])];
+        await userRef.update({ balance: newBalance, transactions: txs });
+
+        // Decrease stock if limited
+        const prizeRef = db.collection('prizes').doc(prizeId);
+        const prizeDoc = await prizeRef.get();
+        if (prizeDoc.exists) {
+          const pd = prizeDoc.data();
+          if (pd.stock && pd.stock > 0) {
+            await prizeRef.update({ stock: pd.stock - 1 });
+          }
+        }
+
+        await db.collection('redemptions').add({
+          prizeId,
+          prizeTitle: title,
+          cost: fee,
+          userId: currentUser.id,
+          userName: currentUser.name || 'Player',
+          userEmail: currentUser.email || '',
+          status: 'pending',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        currentUser.balance = newBalance;
+        currentUser.transactions = txs;
+        updateWalletUI();
+
+        // Auto message in personal chat so admin can deliver prize there
+        await notifyRedeemInChat(title, fee);
+
+        const goChat = confirm('Redeem successful!\n\n₹' + fee + ' cut ho gaye.\nNew Balance: ₹' + newBalance.toFixed(2) + '\n\nAdmin personal chat mein prize deliver karega.\n\nAbhi Chat open karein?');
+        if (goChat) {
+          showScreen('chat');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function adminCreateUser() {
+      const name = document.getElementById('admin-u-name').value.trim();
+      const email = document.getElementById('admin-u-email').value.trim().toLowerCase();
+      const pass = document.getElementById('admin-u-pass').value;
+      const balance = parseFloat(document.getElementById('admin-u-balance').value) || 10;
+
+      if (!name || !email || !pass) return alert('Name, Email aur Password zaroori hain');
+
+      if (!confirm('User create hoga aur aap temporarily logout ho jaoge.\nPhir se admin se login karna hoga. Continue?')) return;
+
+      try {
+        // Create Auth account
+        const cred = await auth.createUserWithEmailAndPassword(email, pass);
+        const uid = cred.user.uid;
+
+        // Create Firestore profile
+        await db.collection('users').doc(uid).set({
+          name,
+          email,
+          uid: '876' + Math.floor(Math.random() * 100000),
+          balance: balance,
+          winnings: 0,
+          bonus: balance,
+          transactions: [{
+            title: 'Admin Created - Welcome Bonus',
+            amount: balance,
+            type: 'credit',
+            date: new Date().toLocaleString('en-PK'),
+            status: 'Success'
+          }],
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          createdBy: 'admin'
+        });
+
+        alert('User successfully create ho gaya!\n\nEmail: ' + email + '\nPassword: ' + pass + '\n\nAb aap logout ho gaye ho. Admin se phir se login karein.');
+        
+        // Clear form
+        document.getElementById('admin-u-name').value = '';
+        document.getElementById('admin-u-email').value = '';
+        document.getElementById('admin-u-pass').value = '';
+        document.getElementById('admin-u-balance').value = '10';
+
+        // onAuthStateChanged will handle logout automatically
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // =====================================================
+    // SCREENS
+    // =====================================================
+    function buySensitivity() {
+      const device = document.getElementById('device-name').value.trim();
+      if (!device) {
+        alert('Pehle apna Device Name likho');
+        return;
+      }
+      const message = encodeURIComponent('Salam, mujhe Custom Sensitivity chahiye.\n\nDevice: ' + device);
+      window.open('https://wa.me/923134004221?text=' + message, '_blank');
+    }
+
+    function showScreen(name) {
+      ['home','tournaments','matchroom','leaderboard','sensitivity','wallet','profile','moreapps','redeem','chat'].forEach(s => {
+        const screen = document.getElementById('screen-' + s);
+        if (screen) screen.classList.add('hide');
+      });
+      const el = document.getElementById('screen-' + name);
+      if (el) {
+        el.classList.remove('hide');
+        el.classList.add('page-enter');
+      }
+
+      document.querySelectorAll('.nav-item').forEach(el => {
+        el.classList.remove('active');
+        el.classList.add('text-gray-400');
+      });
+      const active = document.querySelector(`.nav-item[data-screen="${name}"]`);
+      if (active) {
+        active.classList.add('active');
+        active.classList.remove('text-gray-400');
+      }
+      if (name === 'wallet') updateWalletUI();
+      if (name === 'profile') updateProfileUI();
+      if (name === 'chat') startUserChatListener();
+    }
+
+    // =====================================================
+    // PERSONAL CHAT (User ↔ Admin)
+    // =====================================================
+    let userChatUnsub = null;
+    let adminChatUnsub = null;
+    let currentAdminChatUserId = null;
+
+    async function ensureChatDoc(userId, userName, userEmail) {
+      const chatRef = db.collection('chats').doc(userId);
+      const snap = await chatRef.get();
+      if (!snap.exists) {
+        await chatRef.set({
+          userId,
+          userName: userName || 'Player',
+          userEmail: userEmail || '',
+          lastMessage: '',
+          lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+          unreadAdmin: 0,
+          unreadUser: 0,
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+      return chatRef;
+    }
+
+    function startUserChatListener() {
+      if (!currentUser || !currentUser.id) return;
+      // Clean previous
+      if (userChatUnsub) {
+        userChatUnsub();
+        userChatUnsub = null;
+      }
+      const userId = currentUser.id;
+      ensureChatDoc(userId, currentUser.name, currentUser.email).then(() => {
+        userChatUnsub = db.collection('chats').doc(userId).collection('messages')
+          .orderBy('createdAt', 'asc')
+          .onSnapshot(snap => {
+            const el = document.getElementById('chat-messages');
+            if (!el) return;
+            if (snap.empty) {
+              el.innerHTML = '<p class="text-gray-500 text-center text-sm py-8">Abhi koi message nahi. Prize redeem ke baad yahan likho, admin deliver karega.</p>';
+              return;
+            }
+            let html = '';
+            snap.forEach(doc => {
+              const m = doc.data();
+              const isMe = m.sender === 'user';
+              const time = m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toLocaleTimeString('en-PK', {hour:'2-digit', minute:'2-digit'}) : '';
+              html += `
+                <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+                  <div class="max-w-[80%] rounded-2xl px-4 py-2.5 ${isMe ? 'bg-[#7B2CBF] text-white rounded-br-sm' : 'bg-[#1A1A1A] text-gray-100 rounded-bl-sm border border-gray-700'}">
+                    <p class="text-sm whitespace-pre-wrap break-words">${(m.text || '').replace(/</g,'&lt;')}</p>
+                    <p class="text-[10px] mt-1 opacity-60 ${isMe ? 'text-right' : ''}">${isMe ? 'You' : 'Admin'} • ${time}</p>
+                  </div>
+                </div>`;
+            });
+            el.innerHTML = html;
+            el.scrollTop = el.scrollHeight;
+            // Mark as read for user
+            db.collection('chats').doc(userId).update({ unreadUser: 0 }).catch(()=>{});
+          }, err => {
+            console.log('Chat listen error:', err);
+            document.getElementById('chat-messages').innerHTML = '<p class="text-red-400 text-center text-sm">Chat load nahi ho saka. Firebase rules check karo.</p>';
+          });
+      });
+    }
+
+    async function sendChatMessage() {
+      if (!currentUser || !currentUser.id) return alert('Pehle login karo');
+      const input = document.getElementById('chat-input');
+      const text = (input.value || '').trim();
+      if (!text) return;
+
+      try {
+        const userId = currentUser.id;
+        await ensureChatDoc(userId, currentUser.name, currentUser.email);
+        await db.collection('chats').doc(userId).collection('messages').add({
+          text,
+          sender: 'user',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        await db.collection('chats').doc(userId).update({
+          lastMessage: text,
+          lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+          unreadAdmin: firebase.firestore.FieldValue.increment(1),
+          userName: currentUser.name || 'Player',
+          userEmail: currentUser.email || ''
+        });
+        input.value = '';
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // ===== ADMIN CHAT =====
+    function listenChatsAdmin() {
+      const unsub = db.collection('chats').orderBy('lastMessageAt', 'desc').onSnapshot(snap => {
+        const list = [];
+        snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        const el = document.getElementById('admin-chats-list');
+        if (!el) return;
+        el.innerHTML = list.length ? list.map(c => {
+          const unread = c.unreadAdmin || 0;
+          const time = c.lastMessageAt && c.lastMessageAt.toDate ? c.lastMessageAt.toDate().toLocaleString('en-PK') : '';
+          return `
+            <div class="bg-[#0D0D0D] rounded-xl p-3 flex justify-between items-center gap-3 cursor-pointer hover:bg-[#151515]"
+                 onclick="openAdminChat('${c.id}', '${(c.userName || 'Player').replace(/'/g, "\\'")}', '${(c.userEmail || '').replace(/'/g, "\\'")}')">
+              <div class="min-w-0 flex-1">
+                <div class="flex items-center gap-2">
+                  <p class="font-semibold text-sm truncate">${c.userName || 'Player'}</p>
+                  ${unread > 0 ? `<span class="bg-red-600 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">${unread}</span>` : ''}
+                </div>
+                <p class="text-xs text-gray-400 truncate">${c.lastMessage || 'No messages yet'}</p>
+                <p class="text-[10px] text-gray-500 mt-0.5">${time}</p>
+              </div>
+              <span class="text-[#FFC107] text-xs">Open →</span>
+            </div>`;
+        }).join('') : '<p class="text-gray-500 text-sm text-center">Abhi koi chat nahi. User message karega to yahan dikhega.</p>';
+      }, err => {
+        console.log('Admin chats error:', err);
+        // Fallback without orderBy
+        db.collection('chats').get().then(snap => {
+          const list = [];
+          snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+          const el = document.getElementById('admin-chats-list');
+          if (!el) return;
+          el.innerHTML = list.length ? list.map(c => `
+            <div class="bg-[#0D0D0D] rounded-xl p-3 flex justify-between items-center gap-3 cursor-pointer"
+                 onclick="openAdminChat('${c.id}', '${(c.userName || 'Player').replace(/'/g, "\\'")}', '${(c.userEmail || '').replace(/'/g, "\\'")}')">
+              <div class="min-w-0 flex-1">
+                <p class="font-semibold text-sm truncate">${c.userName || 'Player'}</p>
+                <p class="text-xs text-gray-400 truncate">${c.lastMessage || 'No messages'}</p>
+              </div>
+              <span class="text-[#FFC107] text-xs">Open →</span>
+            </div>`).join('') : '<p class="text-gray-500 text-sm text-center">No chats yet</p>';
+        });
+      });
+      unsubscribes.push(unsub);
+    }
+
+    function openAdminChat(userId, userName, userEmail) {
+      currentAdminChatUserId = userId;
+      document.getElementById('admin-chat-user-name').textContent = userName || 'Player';
+      document.getElementById('admin-chat-user-email').textContent = userEmail || '';
+      document.getElementById('admin-chat-box').classList.remove('hide');
+      document.getElementById('admin-chat-input').value = '';
+
+      if (adminChatUnsub) {
+        adminChatUnsub();
+        adminChatUnsub = null;
+      }
+      adminChatUnsub = db.collection('chats').doc(userId).collection('messages')
+        .orderBy('createdAt', 'asc')
+        .onSnapshot(snap => {
+          const el = document.getElementById('admin-chat-messages');
+          if (!el) return;
+          if (snap.empty) {
+            el.innerHTML = '<p class="text-gray-500 text-sm text-center py-4">No messages yet</p>';
+            return;
+          }
+          let html = '';
+          snap.forEach(doc => {
+            const m = doc.data();
+            const isAdmin = m.sender === 'admin';
+            const time = m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toLocaleTimeString('en-PK', {hour:'2-digit', minute:'2-digit'}) : '';
+            html += `
+              <div class="flex ${isAdmin ? 'justify-end' : 'justify-start'}">
+                <div class="max-w-[85%] rounded-xl px-3 py-2 ${isAdmin ? 'bg-[#7B2CBF] text-white' : 'bg-[#1A1A1A] border border-gray-700'}">
+                  <p class="text-sm whitespace-pre-wrap break-words">${(m.text || '').replace(/</g,'&lt;')}</p>
+                  <p class="text-[10px] mt-1 opacity-60">${isAdmin ? 'You (Admin)' : 'User'} • ${time}</p>
+                </div>
+              </div>`;
+          });
+          el.innerHTML = html;
+          el.scrollTop = el.scrollHeight;
+          // Mark admin unread as 0
+          db.collection('chats').doc(userId).update({ unreadAdmin: 0 }).catch(()=>{});
+        });
+    }
+
+    function closeAdminChat() {
+      currentAdminChatUserId = null;
+      document.getElementById('admin-chat-box').classList.add('hide');
+      if (adminChatUnsub) {
+        adminChatUnsub();
+        adminChatUnsub = null;
+      }
+    }
+
+    async function sendAdminChatMessage() {
+      if (!currentAdminChatUserId) return;
+      const input = document.getElementById('admin-chat-input');
+      const text = (input.value || '').trim();
+      if (!text) return;
+
+      try {
+        await db.collection('chats').doc(currentAdminChatUserId).collection('messages').add({
+          text,
+          sender: 'admin',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        await db.collection('chats').doc(currentAdminChatUserId).update({
+          lastMessage: text,
+          lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+          unreadUser: firebase.firestore.FieldValue.increment(1)
+        });
+        input.value = '';
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    // Auto-create chat + optional message when user redeems a prize
+    async function notifyRedeemInChat(prizeTitle, cost) {
+      if (!currentUser || !currentUser.id) return;
+      try {
+        const userId = currentUser.id;
+        await ensureChatDoc(userId, currentUser.name, currentUser.email);
+        const autoMsg = `🎁 Maine prize redeem kiya:\n${prizeTitle}\nCost: ₹${cost}\n\nPlease deliver karein.`;
+        await db.collection('chats').doc(userId).collection('messages').add({
+          text: autoMsg,
+          sender: 'user',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        await db.collection('chats').doc(userId).update({
+          lastMessage: autoMsg,
+          lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+          unreadAdmin: firebase.firestore.FieldValue.increment(1),
+          userName: currentUser.name || 'Player',
+          userEmail: currentUser.email || ''
+        });
+      } catch (e) {
+        console.log('Auto chat notify error:', e);
+      }
+    }
+  </script>
+</body>
+</html>
