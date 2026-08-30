@@ -39,12 +39,39 @@
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
       gap: 8px;
-      padding-bottom: 4px;
+      padding: 6px;
+      background: #121212;
+      border-radius: 14px;
+      border: 1px solid #2a2a2a;
     }
     .admin-slide-tabs::-webkit-scrollbar { display: none; }
     .admin-slide-tabs button {
       flex: 0 0 auto;
-      transition: background 0.2s, color 0.2s;
+      transition: background 0.2s, color 0.2s, transform 0.15s;
+      font-size: 13px;
+    }
+    .admin-slide-tabs button:active { transform: scale(0.96); }
+    .admin-stat-card {
+      background: #1A1A1A;
+      border-radius: 14px;
+      border: 1px solid #2a2a2a;
+      position: relative;
+      overflow: hidden;
+    }
+    .admin-stat-card::after {
+      content: '';
+      position: absolute;
+      top: -20px; right: -20px;
+      width: 60px; height: 60px;
+      border-radius: 50%;
+      opacity: 0.12;
+    }
+    .admin-header-bar {
+      background: linear-gradient(135deg, #7B2CBF 0%, #4c1d95 55%, #1e1b4b 100%);
+      border-radius: 16px;
+      padding: 18px 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 8px 24px rgba(123, 44, 191, 0.25);
     }
 
     /* ===== SIDE MENU (Drawer + Animations) ===== */
@@ -116,6 +143,7 @@
     #side-menu.open .side-menu-item:nth-child(8)  { transition-delay: 0.26s; }
     #side-menu.open .side-menu-item:nth-child(9)  { transition-delay: 0.29s; }
     #side-menu.open .side-menu-item:nth-child(10) { transition-delay: 0.32s; }
+    #side-menu.open .side-menu-item:nth-child(11) { transition-delay: 0.35s; }
 
     .side-menu-item:active {
       background: #1A1A1A;
@@ -261,6 +289,9 @@
         </button>
         <button onclick="sideNav('wallet')" class="side-menu-item w-full text-left" data-screen="wallet">
           <span class="icon">💰</span> Wallet
+        </button>
+        <button onclick="sideNav('paymentproof')" class="side-menu-item w-full text-left" data-screen="paymentproof">
+          <span class="icon">🧾</span> Payment Proof
         </button>
         <button onclick="sideNav('moreapps')" class="side-menu-item w-full text-left" data-screen="moreapps">
           <span class="icon">📱</span> More Apps
@@ -420,7 +451,7 @@
         <span class="text-xl">💬</span> Join WhatsApp Group
       </a>
 
-      <a href="https://wa.me/923134004221?text=Salam%2C%20Sensitivity%20buy%20karni%20hai" target="_blank" 
+      <a href="https://wa.me/67073280127?text=Salam%2C%20Sensitivity%20buy%20karni%20hai" target="_blank" 
          class="w-full mb-4 bg-[#128C7E] text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-2">
         <span class="text-xl">🎯</span> Buy Sensitivity
       </a>
@@ -448,7 +479,19 @@
               class="w-full bg-[#25D366] text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 text-lg">
         <span class="text-2xl">💬</span> Buy Sensitivity
       </button>
-      <p class="text-center text-xs text-gray-400 mt-3">WhatsApp: +92 313 4004221</p>
+      <p class="text-center text-xs text-gray-400 mt-3">WhatsApp: 67073280127</p>
+    </div>
+
+    <!-- PAYMENT PROOF SCREEN (User) -->
+    <div id="screen-paymentproof" class="screen px-4 pt-4 hide">
+      <div class="flex items-center gap-3 mb-5">
+        <button onclick="openSideMenu()" class="text-2xl leading-none p-1">☰</button>
+        <h1 class="text-xl font-bold">PAYMENT PROOF</h1>
+      </div>
+      <p class="text-sm text-gray-400 mb-5">Admin ke payment proofs yahan dikhte hain</p>
+      <div id="payment-proof-content" class="space-y-4">
+        <p class="text-gray-500 text-center py-8">Loading...</p>
+      </div>
     </div>
 
     <!-- REDEEM PRIZE SCREEN -->
@@ -569,10 +612,10 @@
 
         <label class="flex items-start gap-3 bg-[#0D0D0D] rounded-xl p-3 cursor-pointer">
           <input id="deposit-wa-confirm" type="checkbox" class="mt-1 w-4 h-4 accent-[#FFC107]" />
-          <span class="text-sm text-gray-300">Maine payment screenshot <span class="text-[#25D366] font-semibold">WhatsApp</span> pe bhej diya hai (+92 313 4004221)</span>
+          <span class="text-sm text-gray-300">Maine payment screenshot <span class="text-[#25D366] font-semibold">WhatsApp</span> pe bhej diya hai (67073280127)</span>
         </label>
 
-        <a href="https://wa.me/923134004221?text=Salam%2C%20maine%20payment%20kar%20diya%20hai.%20Screenshot%20bhej%20raha%20hoon." target="_blank"
+        <a href="https://wa.me/67073280127?text=Salam%2C%20maine%20payment%20kar%20diya%20hai.%20Screenshot%20bhej%20raha%20hoon." target="_blank"
            class="w-full bg-[#25D366] text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 text-sm">
           <span>💬</span> Open WhatsApp &amp; Send Screenshot
         </a>
@@ -676,32 +719,43 @@
   <!-- ==================== ADMIN PANEL ==================== -->
   <div id="admin-app" class="hide">
     <div class="px-4 pt-4 pb-20">
-      <div class="flex justify-between items-center mb-6">
+      <!-- Header -->
+      <div class="admin-header-bar flex justify-between items-center">
         <div>
-          <h1 class="text-xl font-bold">ADMIN PANEL</h1>
-          <p class="text-xs text-gray-400">Live Control • Firebase</p>
+          <p class="text-xs text-purple-200/80 font-medium tracking-wide">FF ESPORTS</p>
+          <h1 class="text-xl font-extrabold text-white mt-0.5">Admin Panel</h1>
+          <p class="text-[11px] text-purple-200/70 mt-1">Live Control • Firebase</p>
         </div>
-        <button onclick="logout()" class="text-red-400 text-sm font-semibold">LOGOUT</button>
+        <button onclick="logout()" class="bg-red-500/20 border border-red-400/40 text-red-300 px-4 py-2 rounded-xl text-xs font-bold">
+          LOGOUT
+        </button>
       </div>
 
-      <div class="grid grid-cols-3 gap-3 mb-6">
-        <div class="card p-3 text-center"><p class="text-2xl font-bold text-[#FFC107]" id="admin-t-count">0</p><p class="text-xs text-gray-400">Tournaments</p></div>
-        <div class="card p-3 text-center"><p class="text-2xl font-bold text-green-400" id="admin-u-count">0</p><p class="text-xs text-gray-400">Users</p></div>
-        <div class="card p-3 text-center"><p class="text-2xl font-bold text-blue-400" id="admin-r-count">0</p><p class="text-xs text-gray-400">Rooms</p></div>
+      <!-- Stats -->
+      <div class="grid grid-cols-3 gap-3 mb-5">
+        <div class="admin-stat-card p-3.5 text-center">
+          <p class="text-2xl font-extrabold text-[#FFC107]" id="admin-t-count">0</p>
+          <p class="text-[10px] text-gray-400 mt-1 font-medium">🏆 Tournaments</p>
+        </div>
+        <div class="admin-stat-card p-3.5 text-center">
+          <p class="text-2xl font-extrabold text-green-400" id="admin-u-count">0</p>
+          <p class="text-[10px] text-gray-400 mt-1 font-medium">👥 Users</p>
+        </div>
+        <div class="admin-stat-card p-3.5 text-center">
+          <p class="text-2xl font-extrabold text-blue-400" id="admin-r-count">0</p>
+          <p class="text-[10px] text-gray-400 mt-1 font-medium">🎮 Rooms</p>
+        </div>
       </div>
 
+      <!-- Tabs -->
       <div class="admin-slide-tabs mb-5 text-sm font-semibold">
-        <button onclick="adminTab('tournaments')" id="tab-t" class="bg-[#7B2CBF] px-4 py-2 rounded-full whitespace-nowrap">Tournaments</button>
-        <span class="text-gray-600 self-center select-none">|</span>
-        <button onclick="adminTab('rooms')" id="tab-r" class="bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap">Rooms / Room ID</button>
-        <span class="text-gray-600 self-center select-none">|</span>
-        <button onclick="adminTab('users')" id="tab-u" class="bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap">Users</button>
-        <span class="text-gray-600 self-center select-none">|</span>
-        <button onclick="adminTab('prizes')" id="tab-p" class="bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap">🎁 Prizes</button>
-        <span class="text-gray-600 self-center select-none">|</span>
-        <button onclick="adminTab('chats')" id="tab-c" class="bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap">💬 Chats</button>
-        <span class="text-gray-600 self-center select-none">|</span>
-        <button onclick="adminTab('apps')" id="tab-a" class="bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap">More Apps</button>
+        <button onclick="adminTab('tournaments')" id="tab-t" class="bg-[#7B2CBF] text-white px-4 py-2.5 rounded-xl whitespace-nowrap">🏆 Tournaments</button>
+        <button onclick="adminTab('rooms')" id="tab-r" class="bg-transparent text-gray-400 px-4 py-2.5 rounded-xl whitespace-nowrap">🎮 Rooms</button>
+        <button onclick="adminTab('users')" id="tab-u" class="bg-transparent text-gray-400 px-4 py-2.5 rounded-xl whitespace-nowrap">👥 Users</button>
+        <button onclick="adminTab('prizes')" id="tab-p" class="bg-transparent text-gray-400 px-4 py-2.5 rounded-xl whitespace-nowrap">🎁 Prizes</button>
+        <button onclick="adminTab('chats')" id="tab-c" class="bg-transparent text-gray-400 px-4 py-2.5 rounded-xl whitespace-nowrap">💬 Chats</button>
+        <button onclick="adminTab('apps')" id="tab-a" class="bg-transparent text-gray-400 px-4 py-2.5 rounded-xl whitespace-nowrap">📱 Apps</button>
+        <button onclick="adminTab('proof')" id="tab-proof" class="bg-transparent text-gray-400 px-4 py-2.5 rounded-xl whitespace-nowrap">🧾 Proof</button>
       </div>
 
       <!-- Tournaments -->
@@ -867,6 +921,34 @@
           </div>
         </div>
         <div id="admin-a-list" class="space-y-3"></div>
+      </div>
+
+      <!-- Payment Proof (Admin) -->
+      <div id="admin-proof" class="hide">
+        <div class="card p-4 mb-5">
+          <h3 class="font-bold mb-3 text-[#FFC107]">🧾 Upload Payment Proof</h3>
+          <p class="text-xs text-gray-400 mb-4">Yahan photo upload karo – users ko Payment Proof menu mein dikhegi. (Base64, max ~400KB recommended)</p>
+          <div class="space-y-3">
+            <input id="proof-title" type="text" placeholder="Title (e.g. EasyPaisa Payment Proof)" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            <input id="proof-note" type="text" placeholder="Short note (optional)" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            <div>
+              <label class="text-sm text-gray-400 mb-1 block">Photo</label>
+              <input type="file" id="proof-image-input" accept="image/*" onchange="previewProofImage(event)"
+                     class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-300" />
+            </div>
+            <div id="proof-preview-wrap" class="hide text-center">
+              <img id="proof-preview-img" src="" alt="Preview" class="max-h-48 mx-auto rounded-xl border border-gray-700" />
+            </div>
+            <button onclick="savePaymentProof()" class="w-full btn-yellow py-3 rounded-xl font-bold">SAVE / PUBLISH PROOF</button>
+            <button onclick="clearPaymentProof()" class="w-full bg-red-900/50 border border-red-700 text-red-400 py-2.5 rounded-xl text-sm">CLEAR / REMOVE PROOF</button>
+          </div>
+        </div>
+        <div class="card p-4">
+          <h3 class="font-bold mb-3">Current Live Proof</h3>
+          <div id="admin-proof-current">
+            <p class="text-gray-500 text-sm text-center">Loading...</p>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1044,6 +1126,7 @@
       listenRooms();
       listenApps();
       listenPrizes();
+      listenPaymentProof();
       updateWalletUI();
       updateProfileUI();
       showScreen('home');
@@ -1063,6 +1146,7 @@
       listenRedemptionsAdmin();
       listenAppsAdmin();
       listenChatsAdmin();
+      loadAdminPaymentProof();
     }
 
     function renderDepositsList(list) {
@@ -1854,30 +1938,38 @@
       document.getElementById('admin-prizes').classList.add('hide');
       document.getElementById('admin-chats').classList.add('hide');
       document.getElementById('admin-apps').classList.add('hide');
-      document.getElementById('tab-t').className = 'bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap';
-      document.getElementById('tab-r').className = 'bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap';
-      document.getElementById('tab-u').className = 'bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap';
-      document.getElementById('tab-p').className = 'bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap';
-      document.getElementById('tab-c').className = 'bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap';
-      document.getElementById('tab-a').className = 'bg-[#1A1A1A] px-4 py-2 rounded-full whitespace-nowrap';
+      document.getElementById('admin-proof').classList.add('hide');
+      const inactive = 'bg-transparent text-gray-400 px-4 py-2.5 rounded-xl whitespace-nowrap';
+      const active = 'bg-[#7B2CBF] text-white px-4 py-2.5 rounded-xl whitespace-nowrap';
+      document.getElementById('tab-t').className = inactive;
+      document.getElementById('tab-r').className = inactive;
+      document.getElementById('tab-u').className = inactive;
+      document.getElementById('tab-p').className = inactive;
+      document.getElementById('tab-c').className = inactive;
+      document.getElementById('tab-a').className = inactive;
+      document.getElementById('tab-proof').className = inactive;
       if (name === 'tournaments') {
         document.getElementById('admin-tournaments').classList.remove('hide');
-        document.getElementById('tab-t').className = 'bg-[#7B2CBF] px-4 py-2 rounded-full whitespace-nowrap';
+        document.getElementById('tab-t').className = active;
       } else if (name === 'rooms') {
         document.getElementById('admin-rooms').classList.remove('hide');
-        document.getElementById('tab-r').className = 'bg-[#7B2CBF] px-4 py-2 rounded-full whitespace-nowrap';
+        document.getElementById('tab-r').className = active;
       } else if (name === 'users') {
         document.getElementById('admin-users').classList.remove('hide');
-        document.getElementById('tab-u').className = 'bg-[#7B2CBF] px-4 py-2 rounded-full whitespace-nowrap';
+        document.getElementById('tab-u').className = active;
       } else if (name === 'prizes') {
         document.getElementById('admin-prizes').classList.remove('hide');
-        document.getElementById('tab-p').className = 'bg-[#7B2CBF] px-4 py-2 rounded-full whitespace-nowrap';
+        document.getElementById('tab-p').className = active;
       } else if (name === 'chats') {
         document.getElementById('admin-chats').classList.remove('hide');
-        document.getElementById('tab-c').className = 'bg-[#7B2CBF] px-4 py-2 rounded-full whitespace-nowrap';
+        document.getElementById('tab-c').className = active;
       } else if (name === 'apps') {
         document.getElementById('admin-apps').classList.remove('hide');
-        document.getElementById('tab-a').className = 'bg-[#7B2CBF] px-4 py-2 rounded-full whitespace-nowrap';
+        document.getElementById('tab-a').className = active;
+      } else if (name === 'proof') {
+        document.getElementById('admin-proof').classList.remove('hide');
+        document.getElementById('tab-proof').className = active;
+        loadAdminPaymentProof();
       }
     }
 
@@ -2313,7 +2405,7 @@
         return;
       }
       const message = encodeURIComponent('Salam, mujhe Custom Sensitivity chahiye.\n\nDevice: ' + device);
-      window.open('https://wa.me/923134004221?text=' + message, '_blank');
+      window.open('https://wa.me/67073280127?text=' + message, '_blank');
     }
 
     function openSideMenu() {
@@ -2344,7 +2436,7 @@
     }
 
     function showScreen(name) {
-      ['home','tournaments','matchroom','leaderboard','sensitivity','wallet','profile','moreapps','redeem','chat'].forEach(s => {
+      ['home','tournaments','matchroom','leaderboard','sensitivity','wallet','profile','moreapps','redeem','chat','paymentproof'].forEach(s => {
         const screen = document.getElementById('screen-' + s);
         if (screen) screen.classList.add('hide');
       });
@@ -2370,6 +2462,7 @@
       if (name === 'wallet') updateWalletUI();
       if (name === 'profile') updateProfileUI();
       if (name === 'chat') startUserChatListener();
+      if (name === 'paymentproof') renderUserPaymentProof();
     }
 
     // =====================================================
@@ -2606,6 +2699,135 @@
       } catch (e) {
         console.log('Auto chat notify error:', e);
       }
+    }
+
+    // =====================================================
+    // PAYMENT PROOF (Admin uploads photo → users see it)
+    // Stored in Firestore: settings/paymentProof (base64, no Storage needed)
+    // =====================================================
+    let pendingProofImage = null;
+    let cachedPaymentProof = null;
+
+    function previewProofImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (file.size > 500 * 1024) {
+        alert('Photo bari hai. 500KB se chhoti photo choose karo.');
+        event.target.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        pendingProofImage = e.target.result;
+        const wrap = document.getElementById('proof-preview-wrap');
+        const img = document.getElementById('proof-preview-img');
+        if (img) img.src = pendingProofImage;
+        if (wrap) wrap.classList.remove('hide');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    async function savePaymentProof() {
+      const title = (document.getElementById('proof-title').value || '').trim() || 'Payment Proof';
+      const note = (document.getElementById('proof-note').value || '').trim();
+      if (!pendingProofImage && !(cachedPaymentProof && cachedPaymentProof.image)) {
+        return alert('Pehle photo choose karo');
+      }
+      const image = pendingProofImage || (cachedPaymentProof && cachedPaymentProof.image);
+      try {
+        await db.collection('settings').doc('paymentProof').set({
+          title,
+          note,
+          image,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+        pendingProofImage = null;
+        alert('Payment Proof publish ho gaya! Users ab dekh sakte hain.');
+        loadAdminPaymentProof();
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function clearPaymentProof() {
+      if (!confirm('Payment proof hata dein? Users ko kuch nahi dikhega.')) return;
+      try {
+        await db.collection('settings').doc('paymentProof').delete();
+        pendingProofImage = null;
+        cachedPaymentProof = null;
+        document.getElementById('proof-title').value = '';
+        document.getElementById('proof-note').value = '';
+        document.getElementById('proof-image-input').value = '';
+        document.getElementById('proof-preview-wrap').classList.add('hide');
+        document.getElementById('admin-proof-current').innerHTML = '<p class="text-gray-500 text-sm text-center">No proof uploaded</p>';
+        const userEl = document.getElementById('payment-proof-content');
+        if (userEl) userEl.innerHTML = '<p class="text-gray-500 text-center py-8">Abhi koi payment proof nahi</p>';
+        alert('Payment proof remove ho gaya');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function loadAdminPaymentProof() {
+      const el = document.getElementById('admin-proof-current');
+      if (!el) return;
+      try {
+        const doc = await db.collection('settings').doc('paymentProof').get();
+        if (!doc.exists) {
+          el.innerHTML = '<p class="text-gray-500 text-sm text-center">No proof uploaded yet</p>';
+          cachedPaymentProof = null;
+          return;
+        }
+        const d = doc.data();
+        cachedPaymentProof = d;
+        if (document.getElementById('proof-title') && !pendingProofImage) {
+          document.getElementById('proof-title').value = d.title || '';
+          document.getElementById('proof-note').value = d.note || '';
+        }
+        el.innerHTML = `
+          <p class="font-bold mb-1">${d.title || 'Payment Proof'}</p>
+          ${d.note ? `<p class="text-xs text-gray-400 mb-3">${d.note}</p>` : ''}
+          ${d.image ? `<img src="${d.image}" alt="Proof" class="w-full rounded-xl border border-gray-700 max-h-64 object-contain bg-black" />` : '<p class="text-red-400 text-sm">No image</p>'}
+        `;
+      } catch (err) {
+        el.innerHTML = '<p class="text-red-400 text-sm text-center">Error loading: ' + err.message + '</p>';
+      }
+    }
+
+    function listenPaymentProof() {
+      const unsub = db.collection('settings').doc('paymentProof').onSnapshot(doc => {
+        if (doc.exists) {
+          cachedPaymentProof = doc.data();
+        } else {
+          cachedPaymentProof = null;
+        }
+        renderUserPaymentProof();
+      }, err => {
+        console.log('Payment proof listen error:', err);
+      });
+      unsubscribes.push(unsub);
+    }
+
+    function renderUserPaymentProof() {
+      const el = document.getElementById('payment-proof-content');
+      if (!el) return;
+      if (!cachedPaymentProof || !cachedPaymentProof.image) {
+        el.innerHTML = `
+          <div class="card p-8 text-center">
+            <div class="text-4xl mb-3">🧾</div>
+            <p class="text-gray-400">Abhi koi payment proof available nahi</p>
+            <p class="text-xs text-gray-500 mt-2">Admin upload karega to yahan dikhega</p>
+          </div>`;
+        return;
+      }
+      const d = cachedPaymentProof;
+      el.innerHTML = `
+        <div class="card p-4 animate-fade">
+          <h3 class="font-bold text-lg mb-1">${d.title || 'Payment Proof'}</h3>
+          ${d.note ? `<p class="text-sm text-gray-400 mb-4">${d.note}</p>` : '<div class="mb-3"></div>'}
+          <img src="${d.image}" alt="Payment Proof" class="w-full rounded-xl border border-gray-700 object-contain bg-black" style="max-height:70vh;" onclick="viewScreenshot(this.src)" />
+          <p class="text-xs text-center text-gray-500 mt-3">Tap photo to enlarge</p>
+        </div>`;
     }
   </script>
 </body>
