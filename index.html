@@ -15,6 +15,30 @@
   <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
   <!-- Storage not used (Spark plan) -->
 
+  <!-- =====================================================
+       ONESIGNAL PUSH NOTIFICATIONS
+       1) Sign up free at https://onesignal.com
+       2) Create a "Web" app, get your App ID
+       3) Replace REPLACE_WITH_YOUR_ONESIGNAL_APP_ID below with it
+       4) Download the 2 files OneSignal gives you
+          (OneSignalSDKWorker.js) and upload them to the SAME
+          root folder as this index.html on your web host
+       ===================================================== -->
+  <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+  <script>
+    window.OneSignalDeferred = window.OneSignalDeferred || [];
+    OneSignalDeferred.push(async function(OneSignal) {
+      await OneSignal.init({
+        appId: "bb3e3bc8-29e4-4397-8cd3-8958afbf8f9d",
+        notifyButton: { enable: false },
+        allowLocalhostAsSecureOrigin: true
+      });
+      // Ask permission automatically after init (optional - you can
+      // instead call this from a button click for better opt-in rates)
+      OneSignal.Notifications.requestPermission();
+    });
+  </script>
+
   <style>
     * { font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
     body { background: #0D0D0D; color: white; overflow-x: hidden; margin: 0; }
@@ -1112,6 +1136,12 @@
         currentUser = { id: uid, ...doc.data() };
         isAdmin = false;
         enterUserApp();
+        // Link this device's push subscription to this user's ID
+        if (window.OneSignalDeferred) {
+          window.OneSignalDeferred.push(async function(OneSignal) {
+            try { await OneSignal.login(uid); } catch (e) { console.log('OneSignal login error:', e); }
+          });
+        }
       } else {
         alert('Profile not found');
         logout();
