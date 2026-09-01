@@ -42,61 +42,140 @@
 
   <style>
     * { font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-    body { background: #0D0D0D; color: white; overflow-x: hidden; margin: 0; }
-    .card { background: #1A1A1A; border-radius: 16px; }
-    .btn-yellow { background: #FFC107; color: #000; font-weight: 700; }
-    .btn-purple { background: #7B2CBF; color: white; font-weight: 600; }
-    .btn-red { background: #DC2626; color: white; font-weight: 600; }
-    .btn-green { background: #16A34A; color: white; font-weight: 600; }
-    .nav-item.active { color: #FFC107; }
+    body {
+      background: #0A0A0A;
+      color: white;
+      overflow-x: hidden;
+      margin: 0;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(123,44,191,0.18), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 0%, rgba(255,193,7,0.06), transparent);
+      background-attachment: fixed;
+    }
+    .card {
+      background: linear-gradient(160deg, #1C1C1C 0%, #151515 100%);
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.06);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+    }
+    .btn-yellow {
+      background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%);
+      color: #000;
+      font-weight: 700;
+      box-shadow: 0 4px 14px rgba(255,193,7,0.3);
+    }
+    .btn-purple {
+      background: linear-gradient(135deg, #7B2CBF 0%, #5B21B6 100%);
+      color: white;
+      font-weight: 600;
+      box-shadow: 0 4px 14px rgba(123,44,191,0.3);
+    }
+    .btn-red {
+      background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+      color: white;
+      font-weight: 600;
+    }
+    .btn-green {
+      background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+      color: white;
+      font-weight: 600;
+    }
+    .nav-item {
+      transition: color 0.2s, transform 0.15s;
+      padding: 6px 10px;
+      border-radius: 12px;
+    }
+    .nav-item.active {
+      color: #FFC107;
+      background: rgba(255,193,7,0.08);
+    }
     .nav-item.active span:first-child { transform: scale(1.15); }
     .hide { display: none !important; }
-    .screen { min-height: 100vh; padding-bottom: 90px; }
-    .glow { box-shadow: 0 0 25px rgba(123, 44, 191, 0.4); }
+    .screen { min-height: 100vh; padding-bottom: 96px; }
+    .glow { box-shadow: 0 0 30px rgba(123, 44, 191, 0.35); }
     ::-webkit-scrollbar { width: 0; height: 0; }
     input, select { color: white; }
-    input::placeholder { color: #888; }
+    input::placeholder { color: #777; }
+    select option { background: #1A1A1A; color: white; }
 
-    /* ===== SLIDING TABS (Admin only) ===== */
+    /* Screen headers */
+    .screen-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .screen-header h1 {
+      font-size: 1.25rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    /* Bottom nav */
+    .bottom-nav {
+      background: rgba(12,12,12,0.92) !important;
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(255,255,255,0.08) !important;
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
+    }
+
+    /* ===== ADMIN ===== */
     .admin-slide-tabs {
       display: flex;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
       scrollbar-width: none;
-      gap: 8px;
+      gap: 6px;
       padding: 6px;
       background: #121212;
-      border-radius: 14px;
-      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.07);
     }
     .admin-slide-tabs::-webkit-scrollbar { display: none; }
     .admin-slide-tabs button {
       flex: 0 0 auto;
-      transition: background 0.2s, color 0.2s, transform 0.15s;
-      font-size: 13px;
+      transition: background 0.2s, color 0.2s, transform 0.15s, box-shadow 0.2s;
+      font-size: 12px;
+      font-weight: 600;
+      border-radius: 12px !important;
     }
     .admin-slide-tabs button:active { transform: scale(0.96); }
     .admin-stat-card {
-      background: #1A1A1A;
-      border-radius: 14px;
-      border: 1px solid #2a2a2a;
+      background: linear-gradient(160deg, #1C1C1C 0%, #141414 100%);
+      border-radius: 16px;
+      border: 1px solid rgba(255,255,255,0.07);
       position: relative;
       overflow: hidden;
     }
     .admin-stat-card::after {
       content: '';
       position: absolute;
-      top: -20px; right: -20px;
-      width: 60px; height: 60px;
+      top: -24px; right: -24px;
+      width: 70px; height: 70px;
       border-radius: 50%;
-      opacity: 0.12;
+      background: #FFC107;
+      opacity: 0.08;
     }
     .admin-header-bar {
-      background: linear-gradient(135deg, #7B2CBF 0%, #4c1d95 55%, #1e1b4b 100%);
-      border-radius: 16px;
+      background: linear-gradient(135deg, #7B2CBF 0%, #5B21B6 40%, #1e1b4b 100%);
+      border-radius: 20px;
       padding: 18px 16px;
-      margin-bottom: 16px;
-      box-shadow: 0 8px 24px rgba(123, 44, 191, 0.25);
+      margin-bottom: 18px;
+      box-shadow: 0 10px 32px rgba(123, 44, 191, 0.35);
+      border: 1px solid rgba(255,255,255,0.08);
+      position: relative;
+      overflow: hidden;
+    }
+    .admin-header-bar::before {
+      content: '';
+      position: absolute;
+      top: -40%;
+      right: -10%;
+      width: 160px;
+      height: 160px;
+      background: radial-gradient(circle, rgba(255,193,7,0.2), transparent 70%);
+      pointer-events: none;
     }
 
     /* ===== SIDE MENU (Drawer + Animations) ===== */
@@ -131,11 +210,20 @@
     }
     .side-menu-header {
       padding: 28px 20px 20px;
-      background: linear-gradient(135deg, #7B2CBF 0%, #4c1d95 100%);
-      border-bottom: 1px solid #333;
+      background: linear-gradient(135deg, #7B2CBF 0%, #5B21B6 50%, #1e1b4b 100%);
+      border-bottom: 1px solid rgba(255,255,255,0.08);
       opacity: 0;
       transform: translateY(-12px);
       transition: opacity 0.35s ease 0.08s, transform 0.35s ease 0.08s;
+      position: relative;
+      overflow: hidden;
+    }
+    .side-menu-header::after {
+      content: '';
+      position: absolute;
+      right: -20px; top: -20px;
+      width: 100px; height: 100px;
+      background: radial-gradient(circle, rgba(255,193,7,0.25), transparent 70%);
     }
     #side-menu.open .side-menu-header {
       opacity: 1;
@@ -248,6 +336,77 @@
 
     /* Page transition */
     .page-enter { animation: fadeIn 0.4s ease forwards; }
+
+    /* ===== AUTH / LOGIN UI ===== */
+    #auth-screen {
+      background: radial-gradient(ellipse at top, #1a1030 0%, #0D0D0D 55%);
+      padding-top: 28px;
+      padding-bottom: 40px;
+    }
+    .auth-logo-wrap {
+      position: relative;
+      width: 130px;
+      height: 130px;
+      margin: 0 auto 18px;
+    }
+    .auth-logo-wrap::before {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #FFC107, #7B2CBF, #FFC107);
+      opacity: 0.55;
+      animation: glowPulse 2.5s ease-in-out infinite;
+      z-index: 0;
+    }
+    .auth-logo {
+      position: relative;
+      z-index: 1;
+      width: 130px;
+      height: 130px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 3px solid #FFC107;
+      box-shadow: 0 0 35px rgba(255, 193, 7, 0.45);
+    }
+    .auth-card {
+      background: #161616;
+      border: 1px solid #2a2a2a;
+      border-radius: 20px;
+      padding: 22px 18px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.45);
+    }
+    .auth-input {
+      width: 100%;
+      background: #0D0D0D;
+      border: 1.5px solid #333;
+      border-radius: 14px;
+      padding: 14px 16px;
+      outline: none;
+      color: white;
+      font-size: 15px;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .auth-input:focus {
+      border-color: #FFC107;
+      box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.15);
+    }
+    .auth-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #FFC107 0%, #FF9800 100%);
+      color: #000;
+      font-weight: 800;
+      font-size: 16px;
+      letter-spacing: 0.5px;
+      padding: 15px;
+      border-radius: 14px;
+      border: none;
+      box-shadow: 0 6px 20px rgba(255, 193, 7, 0.35);
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .auth-btn:active {
+      transform: scale(0.97);
+    }
   </style>
 </head>
 <body>
@@ -261,28 +420,55 @@
   </div>
 
   <!-- ==================== AUTH ==================== -->
-  <div id="auth-screen" class="screen flex flex-col items-center justify-center px-6 min-h-screen hide">
-    <div class="text-center mb-6 animate-scale">
-      <img src="ff-logo.jpg" alt="FF Esports" style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin:0 auto 12px;box-shadow:0 0 30px rgba(255,193,7,0.4);" />
-      <h1 class="text-3xl font-extrabold">FF <span class="text-[#FFC107]">ESPORTS</span></h1>
-      <p class="text-gray-400 mt-1 text-sm">Free Fire Tournaments • Pakistani Rs</p>
+  <div id="auth-screen" class="screen flex flex-col items-center justify-center px-5 min-h-screen hide">
+    <!-- TOP DP / LOGO -->
+    <div class="text-center mb-5 animate-scale w-full max-w-sm">
+      <div class="auth-logo-wrap">
+        <img src="ff-logo.jpg" alt="FF Esports" class="auth-logo" />
+      </div>
+      <h1 class="text-3xl font-extrabold tracking-tight">FF <span class="text-[#FFC107]">ESPORTS</span></h1>
+      <p class="text-gray-400 mt-1.5 text-sm">Free Fire Tournaments • Live</p>
+      <div class="flex items-center justify-center gap-2 mt-3">
+        <span class="h-px w-8 bg-gradient-to-r from-transparent to-[#FFC107]/span>
+        <span class="text-[10px] text-[#FFC107] font-semibold tracking-widest uppercase">Pakistan</span>
+        <span class="h-px w-8 bg-gradient-to-l from-transparent to-[#FFC107]/span>
+      </div>
     </div>
 
-    <div id="login-form" class="w-full max-w-sm space-y-4 animate-slide">
-      <input id="login-email" type="email" placeholder="Email" class="w-full bg-[#1A1A1A] border border-gray-700 rounded-xl px-4 py-3.5 outline-none focus:border-[#FFC107]" />
-      <input id="login-pass" type="password" placeholder="Password" class="w-full bg-[#1A1A1A] border border-gray-700 rounded-xl px-4 py-3.5 outline-none focus:border-[#FFC107]" />
-      <button onclick="doLogin()" class="w-full btn-yellow py-3.5 rounded-xl text-lg">LOGIN</button>
-      <p class="text-center text-sm text-gray-400">New player? <span onclick="showSignup()" class="text-[#FFC107] font-semibold cursor-pointer">Create Account</span></p>
-      <p class="text-center text-xs text-gray-500 mt-3">Admin bhi yahi se login kare</p>
+    <!-- LOGIN CARD -->
+    <div id="login-form" class="w-full max-w-sm auth-card space-y-4 animate-slide">
+      <p class="text-center text-sm font-semibold text-gray-300 mb-1">Login to continue</p>
+      <div>
+        <label class="text-xs text-gray-500 mb-1.5 block pl-1">Email</label>
+        <input id="login-email" type="email" placeholder="you@email.com" class="auth-input" />
+      </div>
+      <div>
+        <label class="text-xs text-gray-500 mb-1.5 block pl-1">Password</label>
+        <input id="login-pass" type="password" placeholder="••••••••" class="auth-input" />
+      </div>
+      <button onclick="doLogin()" class="auth-btn mt-1">LOGIN</button>
+      <p class="text-center text-sm text-gray-400 pt-1">New player? <span onclick="showSignup()" class="text-[#FFC107] font-bold cursor-pointer">Create Account</span></p>
+      <p class="text-center text-[11px] text-gray-600">Admin bhi yahi se login kare</p>
     </div>
 
-    <div id="signup-form" class="w-full max-w-sm space-y-4 hide">
-      <input id="signup-name" type="text" placeholder="Player Name" class="w-full bg-[#1A1A1A] border border-gray-700 rounded-xl px-4 py-3.5 outline-none focus:border-[#FFC107]" />
-      <input id="signup-email" type="email" placeholder="Email" class="w-full bg-[#1A1A1A] border border-gray-700 rounded-xl px-4 py-3.5 outline-none focus:border-[#FFC107]" />
-      <input id="signup-pass" type="password" placeholder="Password" class="w-full bg-[#1A1A1A] border border-gray-700 rounded-xl px-4 py-3.5 outline-none focus:border-[#FFC107]" />
-      <button onclick="doSignup()" class="w-full btn-yellow py-3.5 rounded-xl text-lg">CREATE ACCOUNT</button>
-      <p class="text-center text-sm text-gray-400">Already have account? <span onclick="showLogin()" class="text-[#FFC107] font-semibold cursor-pointer">Login</span></p>
-      <p class="text-center text-xs text-yellow-400 mt-2">Account banne ke baad Admin approval chahiye</p>
+    <!-- SIGNUP CARD -->
+    <div id="signup-form" class="w-full max-w-sm auth-card space-y-4 hide">
+      <p class="text-center text-sm font-semibold text-gray-300 mb-1">Create new account</p>
+      <div>
+        <label class="text-xs text-gray-500 mb-1.5 block pl-1">Player Name</label>
+        <input id="signup-name" type="text" placeholder="Apna naam" class="auth-input" />
+      </div>
+      <div>
+        <label class="text-xs text-gray-500 mb-1.5 block pl-1">Email</label>
+        <input id="signup-email" type="email" placeholder="you@email.com" class="auth-input" />
+      </div>
+      <div>
+        <label class="text-xs text-gray-500 mb-1.5 block pl-1">Password</label>
+        <input id="signup-pass" type="password" placeholder="••••••••" class="auth-input" />
+      </div>
+      <button onclick="doSignup()" class="auth-btn mt-1">CREATE ACCOUNT</button>
+      <p class="text-center text-sm text-gray-400 pt-1">Already have account? <span onclick="showLogin()" class="text-[#FFC107] font-bold cursor-pointer">Login</span></p>
+      <p class="text-center text-[11px] text-yellow-500/90">Account banne ke baad Admin approval chahiye</p>
     </div>
   </div>
 
@@ -310,9 +496,14 @@
     <div id="side-menu-overlay" onclick="closeSideMenu()"></div>
     <div id="side-menu">
       <div class="side-menu-header">
-        <p class="text-xs text-purple-200 mb-1">FF ESPORTS</p>
-        <h2 class="text-xl font-bold text-white" id="side-menu-name">Player</h2>
-        <p class="text-xs text-purple-200 mt-1" id="side-menu-email"></p>
+        <div class="flex items-center gap-3 mb-2 relative z-10">
+          <img src="ff-logo.jpg" alt="Logo" style="width:44px;height:44px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,193,7,0.5);" />
+          <div class="min-w-0">
+            <p class="text-xs text-purple-200 mb-0.5">FF ESPORTS</p>
+            <h2 class="text-lg font-bold text-white truncate" id="side-menu-name">Player</h2>
+          </div>
+        </div>
+        <p class="text-xs text-purple-200/80 relative z-10" id="side-menu-email"></p>
       </div>
       <div class="flex-1 py-2">
         <button onclick="sideNav('home')" class="side-menu-item w-full text-left" data-screen="home">
@@ -328,7 +519,10 @@
           <span class="icon">🎁</span> Redeem Prize
         </button>
         <button onclick="sideNav('chat')" class="side-menu-item w-full text-left" data-screen="chat">
-          <span class="icon">💬</span> Personal Chat
+          <span class="icon">💬</span> Admin Chat
+        </button>
+        <button onclick="sideNav('userchat')" class="side-menu-item w-full text-left" data-screen="userchat">
+          <span class="icon">👥</span> Players Chat
         </button>
         <button onclick="sideNav('wallet')" class="side-menu-item w-full text-left" data-screen="wallet">
           <span class="icon">💰</span> Wallet
@@ -366,11 +560,12 @@
         <div class="text-2xl">🔔</div>
       </div>
       <div class="card overflow-hidden mb-6 relative glow animate-glow">
-        <div class="bg-gradient-to-r from-purple-900 via-purple-700 to-indigo-800 p-5">
-          <p class="text-[#FFC107] font-bold text-sm">FREE FIRE</p>
-          <h2 class="text-2xl font-extrabold mt-1">BATTLE FOR GLORY</h2>
-          <p class="text-sm text-gray-300 mt-2">SQUAD TOURNAMENT</p>
-          <button onclick="showScreen('tournaments')" class="mt-4 btn-purple px-5 py-2 rounded-lg text-sm">REGISTER NOW</button>
+        <div class="bg-gradient-to-br from-purple-900 via-violet-800 to-indigo-950 p-5 relative">
+          <div class="absolute right-3 top-3 opacity-30 text-5xl">🏆</div>
+          <p class="text-[#FFC107] font-bold text-xs tracking-widest">FREE FIRE</p>
+          <h2 class="text-2xl font-extrabold mt-1 tracking-tight">BATTLE FOR GLORY</h2>
+          <p class="text-sm text-purple-100/80 mt-2">SQUAD TOURNAMENT • LIVE</p>
+          <button onclick="showScreen('tournaments')" class="mt-4 btn-yellow px-5 py-2.5 rounded-xl text-sm font-bold">REGISTER NOW</button>
         </div>
       </div>
       <h3 class="font-bold text-lg mb-3">UPCOMING TOURNAMENTS</h3>
@@ -428,10 +623,10 @@
         <button onclick="openSideMenu()" class="text-2xl leading-none p-1">☰</button>
         <h1 class="text-xl font-bold">WALLET</h1>
       </div>
-      <div class="card p-6 text-center mb-6 relative overflow-hidden animate-scale">
-        <div class="absolute right-4 top-4 text-5xl opacity-20">💰</div>
-        <p class="text-gray-400 text-sm">TOTAL BALANCE</p>
-        <p id="wallet-balance" class="text-4xl font-extrabold mt-2">₹0.00</p>
+      <div class="card p-6 text-center mb-6 relative overflow-hidden animate-scale" style="background:linear-gradient(160deg,#1a1230 0%,#151515 60%);border-color:rgba(123,44,191,0.25);">
+        <div class="absolute right-4 top-4 text-5xl opacity-15">💰</div>
+        <p class="text-gray-400 text-xs tracking-widest font-semibold">TOTAL BALANCE</p>
+        <p id="wallet-balance" class="text-4xl font-extrabold mt-2 text-[#FFC107]">₹0.00</p>
         <div class="flex gap-3 justify-center mt-5">
           <button onclick="addMoney()" class="btn-yellow px-6 py-3 rounded-xl font-bold">ADD MONEY</button>
           <button onclick="openWithdrawModal()" class="btn-red px-6 py-3 rounded-xl font-bold">WITHDRAW</button>
@@ -558,7 +753,7 @@
       <div class="flex items-center gap-3 mb-4">
         <button onclick="openSideMenu()" class="text-2xl leading-none p-1">☰</button>
         <div>
-          <h1 class="text-xl font-bold">Personal Chat</h1>
+          <h1 class="text-xl font-bold">Admin Chat</h1>
           <p class="text-xs text-gray-400">Admin se baat karo • Prize delivery yahan</p>
         </div>
       </div>
@@ -574,6 +769,45 @@
         <button onclick="sendChatMessage()" class="btn-yellow px-5 py-3 rounded-xl font-bold">Send</button>
       </div>
       <p class="text-xs text-center text-gray-500 mt-2">Prize redeem ke baad yahan message karo, admin deliver karega</p>
+    </div>
+
+    <!-- PLAYERS / USER-TO-USER CHAT -->
+    <div id="screen-userchat" class="screen px-4 pt-4 hide flex flex-col" style="height:100vh;padding-bottom:90px;">
+      <div class="flex items-center gap-3 mb-4">
+        <button onclick="openSideMenu()" class="text-2xl leading-none p-1">☰</button>
+        <div class="flex-1">
+          <h1 class="text-xl font-bold">Players Chat</h1>
+          <p class="text-xs text-gray-400">Doosre players se private chat</p>
+        </div>
+      </div>
+
+      <!-- Players list (default view) -->
+      <div id="userchat-list-view">
+        <p class="text-sm text-gray-400 mb-3">Player choose karo, chat start hogi</p>
+        <div id="userchat-players-list" class="space-y-2 overflow-y-auto" style="max-height:calc(100vh - 180px);">
+          <p class="text-gray-500 text-center text-sm py-8">Loading players...</p>
+        </div>
+      </div>
+
+      <!-- DM conversation view -->
+      <div id="userchat-dm-view" class="hide flex flex-col flex-1" style="min-height:0;">
+        <div class="flex items-center gap-3 mb-3 card p-3">
+          <button onclick="closeUserDm()" class="text-gray-400 text-lg">←</button>
+          <div class="flex-1 min-w-0">
+            <p id="userchat-dm-name" class="font-bold truncate">Player</p>
+            <p id="userchat-dm-email" class="text-xs text-gray-400 truncate"></p>
+          </div>
+        </div>
+        <div id="userchat-dm-messages" class="flex-1 overflow-y-auto space-y-3 mb-3 pr-1" style="max-height:calc(100vh - 260px);">
+          <p class="text-gray-500 text-center text-sm py-8">No messages yet</p>
+        </div>
+        <div class="flex gap-2 items-end">
+          <input id="userchat-dm-input" type="text" placeholder="Message likho..."
+                 class="flex-1 bg-[#1A1A1A] border border-gray-700 rounded-xl px-4 py-3 outline-none focus:border-[#FFC107] text-white"
+                 onkeydown="if(event.key==='Enter') sendUserDmMessage()" />
+          <button id="userchat-dm-send" onclick="sendUserDmMessage()" class="btn-yellow px-5 py-3 rounded-xl font-bold">Send</button>
+        </div>
+      </div>
     </div>
 
     <!-- MORE APPS SCREEN -->
@@ -598,7 +832,7 @@
     </div>
 
     <!-- BOTTOM NAV (Main 5 items only) -->
-    <div class="fixed bottom-0 left-0 right-0 bg-[#121212] border-t border-gray-800 flex justify-around items-center py-2 z-50">
+    <div class="fixed bottom-0 left-0 right-0 bottom-nav flex justify-around items-center py-2.5 z-50">
       <button onclick="showScreen('home')" class="nav-item flex flex-col items-center active" data-screen="home">
         <span class="text-lg">🏠</span><span class="text-[10px] mt-0.5">Home</span>
       </button>
@@ -763,13 +997,16 @@
   <div id="admin-app" class="hide">
     <div class="px-4 pt-4 pb-20">
       <!-- Header -->
-      <div class="admin-header-bar flex justify-between items-center">
-        <div>
-          <p class="text-xs text-purple-200/80 font-medium tracking-wide">FF ESPORTS</p>
-          <h1 class="text-xl font-extrabold text-white mt-0.5">Admin Panel</h1>
-          <p class="text-[11px] text-purple-200/70 mt-1">Live Control • Firebase</p>
+      <div class="admin-header-bar flex justify-between items-center gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <img src="ff-logo.jpg" alt="Logo" style="width:48px;height:48px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,193,7,0.6);box-shadow:0 0 16px rgba(255,193,7,0.35);" />
+          <div class="min-w-0">
+            <p class="text-xs text-purple-200/80 font-medium tracking-wide">FF ESPORTS</p>
+            <h1 class="text-lg font-extrabold text-white mt-0.5 truncate">Admin Panel</h1>
+            <p class="text-[11px] text-purple-200/70 mt-0.5">Live Control • Firebase</p>
+          </div>
         </div>
-        <button onclick="logout()" class="bg-red-500/20 border border-red-400/40 text-red-300 px-4 py-2 rounded-xl text-xs font-bold">
+        <button onclick="logout()" class="bg-red-500/25 border border-red-400/40 text-red-200 px-3.5 py-2 rounded-xl text-xs font-bold flex-shrink-0">
           LOGOUT
         </button>
       </div>
@@ -1169,7 +1406,11 @@
       unsubscribes = [];
       if (userChatUnsub) { userChatUnsub(); userChatUnsub = null; }
       if (adminChatUnsub) { adminChatUnsub(); adminChatUnsub = null; }
+      if (typeof userDmUnsub !== 'undefined' && userDmUnsub) { userDmUnsub(); userDmUnsub = null; }
+      if (typeof userChatPlayersUnsub !== 'undefined' && userChatPlayersUnsub) { userChatPlayersUnsub(); userChatPlayersUnsub = null; }
       currentAdminChatUserId = null;
+      currentDmChatId = null;
+      currentDmPeer = null;
       auth.signOut();
       document.getElementById('main-app').classList.add('hide');
       document.getElementById('admin-app').classList.add('hide');
@@ -2590,7 +2831,7 @@
     }
 
     function showScreen(name) {
-      ['home','tournaments','matchroom','leaderboard','sensitivity','wallet','profile','moreapps','redeem','chat','paymentproof'].forEach(s => {
+      ['home','tournaments','matchroom','leaderboard','sensitivity','wallet','profile','moreapps','redeem','chat','userchat','paymentproof'].forEach(s => {
         const screen = document.getElementById('screen-' + s);
         if (screen) screen.classList.add('hide');
       });
@@ -2616,6 +2857,7 @@
       if (name === 'wallet') updateWalletUI();
       if (name === 'profile') updateProfileUI();
       if (name === 'chat') startUserChatListener();
+      if (name === 'userchat') openUserChatList();
       if (name === 'paymentproof') renderUserPaymentProof();
     }
 
@@ -2713,7 +2955,179 @@
       }
     }
 
-    // ===== ADMIN CHAT =====
+    // =====================================================
+    // USER-TO-USER (PLAYERS) CHAT
+    // =====================================================
+    let userDmUnsub = null;
+    let currentDmChatId = null;
+    let currentDmPeer = null; // { id, name, email }
+    let userChatPlayersUnsub = null;
+
+    function dmChatId(uidA, uidB) {
+      return [uidA, uidB].sort().join('_');
+    }
+
+    function openUserChatList() {
+      // Show list, hide DM
+      document.getElementById('userchat-list-view').classList.remove('hide');
+      document.getElementById('userchat-dm-view').classList.add('hide');
+      closeUserDmListener();
+      loadUserChatPlayers();
+    }
+
+    function loadUserChatPlayers() {
+      if (!currentUser || !currentUser.id) return;
+      const el = document.getElementById('userchat-players-list');
+      if (!el) return;
+      el.innerHTML = '<p class="text-gray-500 text-center text-sm py-8">Loading players...</p>';
+
+      // One-time + live list of approved users (exclude self)
+      if (userChatPlayersUnsub) { userChatPlayersUnsub(); userChatPlayersUnsub = null; }
+      userChatPlayersUnsub = db.collection('users').onSnapshot(snap => {
+        const players = [];
+        snap.forEach(doc => {
+          if (doc.id === currentUser.id) return;
+          const d = doc.data();
+          const st = d.status || 'approved';
+          if (st === 'rejected') return;
+          // Show pending too or only approved? Only approved for chat
+          if (st !== 'approved' && st !== 'pending') return;
+          if (st === 'pending') return; // only approved can chat
+          players.push({ id: doc.id, name: d.name || 'Player', email: d.email || '', uid: d.uid || '' });
+        });
+        players.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+        if (!players.length) {
+          el.innerHTML = '<p class="text-gray-500 text-center text-sm py-8">Abhi koi dusra player nahi</p>';
+          return;
+        }
+        el.innerHTML = players.map(p => `
+          <div class="card p-3 flex items-center gap-3 cursor-pointer active:scale-[0.98] transition"
+               onclick="openUserDm('${p.id}', '${(p.name || 'Player').replace(/'/g, "\\'")}', '${(p.email || '').replace(/'/g, "\\'")}')">
+            <div class="w-11 h-11 rounded-full bg-gradient-to-br from-purple-600 to-indigo-700 flex items-center justify-center text-lg flex-shrink-0">🧑‍🎤</div>
+            <div class="flex-1 min-w-0">
+              <p class="font-semibold truncate">${p.name || 'Player'}</p>
+              <p class="text-xs text-gray-400 truncate">${p.email || ('UID: ' + (p.uid || '-'))}</p>
+            </div>
+            <span class="text-[#FFC107] text-xs font-semibold">Chat →</span>
+          </div>
+        `).join('');
+      }, err => {
+        console.log('Players list error:', err);
+        el.innerHTML = '<p class="text-red-400 text-center text-sm">Players load nahi hue. Rules check karo.</p>';
+      });
+    }
+
+    async function openUserDm(peerId, peerName, peerEmail) {
+      if (!currentUser || !currentUser.id) return alert('Pehle login karo');
+      if (peerId === currentUser.id) return;
+
+      currentDmPeer = { id: peerId, name: peerName || 'Player', email: peerEmail || '' };
+      currentDmChatId = dmChatId(currentUser.id, peerId);
+
+      document.getElementById('userchat-list-view').classList.add('hide');
+      document.getElementById('userchat-dm-view').classList.remove('hide');
+      document.getElementById('userchat-dm-name').textContent = peerName || 'Player';
+      document.getElementById('userchat-dm-email').textContent = peerEmail || '';
+      document.getElementById('userchat-dm-input').value = '';
+      document.getElementById('userchat-dm-messages').innerHTML = '<p class="text-gray-500 text-center text-sm py-8">Loading...</p>';
+
+      // Ensure DM chat doc exists
+      const chatRef = db.collection('dmChats').doc(currentDmChatId);
+      const snap = await chatRef.get();
+      if (!snap.exists) {
+        await chatRef.set({
+          participants: [currentUser.id, peerId],
+          names: {
+            [currentUser.id]: currentUser.name || 'Player',
+            [peerId]: peerName || 'Player'
+          },
+          emails: {
+            [currentUser.id]: currentUser.email || '',
+            [peerId]: peerEmail || ''
+          },
+          lastMessage: '',
+          lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      }
+
+      closeUserDmListener();
+      userDmUnsub = chatRef.collection('messages').orderBy('createdAt', 'asc').onSnapshot(ms => {
+        const el = document.getElementById('userchat-dm-messages');
+        if (!el) return;
+        if (ms.empty) {
+          el.innerHTML = '<p class="text-gray-500 text-center text-sm py-8">Abhi koi message nahi. Pehla message bhejo!</p>';
+          return;
+        }
+        let html = '';
+        ms.forEach(doc => {
+          const m = doc.data();
+          const isMe = m.senderId === currentUser.id;
+          const time = m.createdAt && m.createdAt.toDate ? m.createdAt.toDate().toLocaleTimeString('en-PK', {hour:'2-digit', minute:'2-digit'}) : '';
+          html += `
+            <div class="flex ${isMe ? 'justify-end' : 'justify-start'}">
+              <div class="max-w-[80%] rounded-2xl px-4 py-2.5 ${isMe ? 'bg-[#7B2CBF] text-white rounded-br-sm' : 'bg-[#1A1A1A] text-gray-100 rounded-bl-sm border border-gray-700'}">
+                <p class="text-sm whitespace-pre-wrap break-words">${(m.text || '').replace(/</g,'&lt;')}</p>
+                <p class="text-[10px] mt-1 opacity-60 ${isMe ? 'text-right' : ''}">${isMe ? 'You' : (peerName || 'Player')} • ${time}</p>
+              </div>
+            </div>`;
+        });
+        el.innerHTML = html;
+        el.scrollTop = el.scrollHeight;
+      }, err => {
+        console.log('DM listen error:', err);
+        document.getElementById('userchat-dm-messages').innerHTML = '<p class="text-red-400 text-center text-sm">Chat load error: ' + err.message + '</p>';
+      });
+    }
+
+    function closeUserDmListener() {
+      if (userDmUnsub) { userDmUnsub(); userDmUnsub = null; }
+    }
+
+    function closeUserDm() {
+      closeUserDmListener();
+      currentDmChatId = null;
+      currentDmPeer = null;
+      document.getElementById('userchat-dm-view').classList.add('hide');
+      document.getElementById('userchat-list-view').classList.remove('hide');
+    }
+
+    async function sendUserDmMessage() {
+      if (!currentUser || !currentUser.id) return alert('Pehle login karo');
+      if (!currentDmChatId || !currentDmPeer) return alert('Pehle player choose karo');
+      const input = document.getElementById('userchat-dm-input');
+      const btn = document.getElementById('userchat-dm-send');
+      const text = (input.value || '').trim();
+      if (!text) return;
+
+      if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+      input.disabled = true;
+      try {
+        await db.collection('dmChats').doc(currentDmChatId).collection('messages').add({
+          text,
+          senderId: currentUser.id,
+          senderName: currentUser.name || 'Player',
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        await db.collection('dmChats').doc(currentDmChatId).update({
+          lastMessage: text,
+          lastMessageAt: firebase.firestore.FieldValue.serverTimestamp(),
+          ['names.' + currentUser.id]: currentUser.name || 'Player'
+        });
+        input.value = '';
+        // Optional push to peer
+        sendPushNotification(currentDmPeer.id, 'FF ESPORTS - New Message', (currentUser.name || 'Player') + ': ' + text).catch(()=>{});
+      } catch (err) {
+        console.error(err);
+        alert('Send fail: ' + err.message);
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Send'; }
+        input.disabled = false;
+        input.focus();
+      }
+    }
+
+        // ===== ADMIN CHAT =====
     function listenChatsAdmin() {
       const unsub = db.collection('chats').orderBy('lastMessageAt', 'desc').onSnapshot(snap => {
         const list = [];
