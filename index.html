@@ -20,9 +20,10 @@
        1) Sign up free at https://onesignal.com
        2) Create a "Web" app, get your App ID
        3) Replace REPLACE_WITH_YOUR_ONESIGNAL_APP_ID below with it
-       4) Download the 2 files OneSignal gives you
-          (OneSignalSDKWorker.js) and upload them to the SAME
-          root folder as this index.html on your web host
+       4) Create a file named OneSignalSDKWorker.js in your site's
+          ROOT folder (same level as this index.html) containing
+          exactly this one line:
+          importScripts("https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.sw.js");
        ===================================================== -->
   <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
   <script>
@@ -253,17 +254,18 @@
 
   <!-- ==================== SPLASH SCREEN ==================== -->
   <div id="splash">
-    <div class="splash-logo">FF <span style="color:#FFC107">ESPORTS</span></div>
-    <div class="splash-sub">Free Fire Tournaments • Live</div>
+    <img src="ff-logo.jpg" alt="FF Esports" style="width:160px;height:160px;border-radius:50%;object-fit:cover;box-shadow:0 0 40px rgba(255,193,7,0.45);animation:scaleIn 0.8s ease;" />
+    <div class="splash-sub" style="margin-top:16px;">Free Fire Tournaments • Live</div>
     <div class="loader"></div>
     <p style="margin-top:20px;font-size:12px;color:#666" id="splash-status">Loading...</p>
   </div>
 
   <!-- ==================== AUTH ==================== -->
   <div id="auth-screen" class="screen flex flex-col items-center justify-center px-6 min-h-screen hide">
-    <div class="text-center mb-8 animate-scale">
-      <h1 class="text-4xl font-extrabold">FF <span class="text-[#FFC107]">ESPORTS</span></h1>
-      <p class="text-gray-400 mt-2 text-sm">Free Fire Tournaments • Pakistani Rs</p>
+    <div class="text-center mb-6 animate-scale">
+      <img src="ff-logo.jpg" alt="FF Esports" style="width:120px;height:120px;border-radius:50%;object-fit:cover;margin:0 auto 12px;box-shadow:0 0 30px rgba(255,193,7,0.4);" />
+      <h1 class="text-3xl font-extrabold">FF <span class="text-[#FFC107]">ESPORTS</span></h1>
+      <p class="text-gray-400 mt-1 text-sm">Free Fire Tournaments • Pakistani Rs</p>
     </div>
 
     <div id="login-form" class="w-full max-w-sm space-y-4 animate-slide">
@@ -280,7 +282,24 @@
       <input id="signup-pass" type="password" placeholder="Password" class="w-full bg-[#1A1A1A] border border-gray-700 rounded-xl px-4 py-3.5 outline-none focus:border-[#FFC107]" />
       <button onclick="doSignup()" class="w-full btn-yellow py-3.5 rounded-xl text-lg">CREATE ACCOUNT</button>
       <p class="text-center text-sm text-gray-400">Already have account? <span onclick="showLogin()" class="text-[#FFC107] font-semibold cursor-pointer">Login</span></p>
-      <p class="text-center text-xs text-green-400 mt-2">New account pe 10 Rs Welcome Bonus</p>
+      <p class="text-center text-xs text-yellow-400 mt-2">Account banne ke baad Admin approval chahiye</p>
+    </div>
+  </div>
+
+  <!-- ==================== PENDING APPROVAL SCREEN ==================== -->
+  <div id="pending-screen" class="screen flex flex-col items-center justify-center px-6 min-h-screen hide">
+    <div class="w-full max-w-sm text-center animate-scale">
+      <img src="ff-logo.jpg" alt="FF Esports" style="width:100px;height:100px;border-radius:50%;object-fit:cover;margin:0 auto 16px;opacity:0.9;" />
+      <div class="text-5xl mb-3">⏳</div>
+      <h1 class="text-2xl font-extrabold mb-2">Approval Pending</h1>
+      <p class="text-gray-400 text-sm mb-6">Aapka account admin ke approval ka wait kar raha hai. Approve hone ke baad full access milega.</p>
+      <div class="card p-4 mb-6 text-left text-sm space-y-2">
+        <p><span class="text-gray-500">Name:</span> <span id="pending-name" class="font-semibold">-</span></p>
+        <p><span class="text-gray-500">Email:</span> <span id="pending-email" class="font-semibold">-</span></p>
+        <p><span class="text-gray-500">Status:</span> <span class="text-yellow-400 font-bold">PENDING</span></p>
+      </div>
+      <p class="text-xs text-gray-500 mb-4">Admin approve karega to access mil jayega. Page refresh / dubara login karke check karo.</p>
+      <button onclick="logout()" class="w-full bg-red-900/50 border border-red-700 text-red-400 py-3 rounded-xl font-semibold">LOGOUT</button>
     </div>
   </div>
 
@@ -921,7 +940,7 @@
             <input id="admin-chat-input" type="text" placeholder="Reply likho (prize code / details)..." 
                    class="flex-1 bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-2.5 outline-none focus:border-[#FFC107] text-white text-sm"
                    onkeydown="if(event.key==='Enter') sendAdminChatMessage()" />
-            <button onclick="sendAdminChatMessage()" class="btn-yellow px-4 py-2.5 rounded-xl font-bold text-sm">Send</button>
+            <button id="admin-chat-send-btn" onclick="sendAdminChatMessage()" class="btn-yellow px-4 py-2.5 rounded-xl font-bold text-sm">Send</button>
           </div>
         </div>
       </div>
@@ -1001,6 +1020,39 @@
     const ADMIN_EMAIL = "admin@ffesports.com";
 
     let currentUser = null;
+
+    // =====================================================
+    // PUSH NOTIFICATIONS (OneSignal REST API)
+    // Sends a push to a specific user, targeted by the
+    // external_id we set via OneSignal.login(uid) at login.
+    // NOTE: This REST API key is exposed in client code.
+    // For production-grade security, move this call to a
+    // server-side Cloud Function instead.
+    // =====================================================
+    const ONESIGNAL_APP_ID = "bb3e3bc8-29e4-4397-8cd3-8958afbf8f9d";
+    const ONESIGNAL_REST_API_KEY = "os_v2_app_xm7dxsbj4rbzpdgtrfmk7p4ptulzbewe4flubpee5ybgmt5dgrb4f7jouscflo464brwbvslqqgrpbhyg7hr7u2y3zcynderpgkfcyy";
+
+    async function sendPushNotification(externalUserId, title, message) {
+      if (!externalUserId) return;
+      try {
+        await fetch('https://onesignal.com/api/v1/notifications', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json; charset=utf-8',
+            'Authorization': `Basic ${ONESIGNAL_REST_API_KEY}`
+          },
+          body: JSON.stringify({
+            app_id: ONESIGNAL_APP_ID,
+            include_aliases: { external_id: [externalUserId] },
+            target_channel: 'push',
+            headings: { en: title },
+            contents: { en: message }
+          })
+        });
+      } catch (e) {
+        console.log('Push notification error:', e);
+      }
+    }
     let isAdmin = false;
     let unsubscribes = [];
 
@@ -1078,25 +1130,20 @@
         const cred = await auth.createUserWithEmailAndPassword(email, pass);
         const uid = cred.user.uid;
 
-        // Create user profile in Firestore
+        // Create user profile in Firestore (pending until admin approves)
         await db.collection('users').doc(uid).set({
           name,
           email,
           uid: '876' + Math.floor(Math.random() * 100000),
-          balance: 10,
+          balance: 0,
           winnings: 0,
-          bonus: 10,
-          transactions: [{
-            title: 'Welcome Bonus',
-            amount: 10,
-            type: 'credit',
-            date: new Date().toLocaleString('en-PK'),
-            status: 'Success'
-          }],
+          bonus: 0,
+          status: 'pending',
+          transactions: [],
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        alert('Account ban gaya! 10 Rs Welcome Bonus mil gaya');
+        alert('Account ban gaya!\n\nAb Admin approval ka wait karein.\nApprove hone ke baad 10 Rs Welcome Bonus + full access milega.');
         // onAuthStateChanged will handle the rest
       } catch (err) {
         alert('Error: ' + err.message);
@@ -1126,6 +1173,7 @@
       auth.signOut();
       document.getElementById('main-app').classList.add('hide');
       document.getElementById('admin-app').classList.add('hide');
+      document.getElementById('pending-screen').classList.add('hide');
       document.getElementById('auth-screen').classList.remove('hide');
       showLogin();
     }
@@ -1135,7 +1183,16 @@
       if (doc.exists) {
         currentUser = { id: uid, ...doc.data() };
         isAdmin = false;
-        enterUserApp();
+        const st = currentUser.status || 'approved';
+        if (st === 'pending') {
+          enterPendingScreen();
+        } else if (st === 'rejected') {
+          alert('Aapka account admin ne reject / block kar diya hai.');
+          logout();
+          return;
+        } else {
+          enterUserApp();
+        }
         // Link this device's push subscription to this user's ID
         if (window.OneSignalDeferred) {
           window.OneSignalDeferred.push(async function(OneSignal) {
@@ -1148,9 +1205,21 @@
       }
     }
 
+    function enterPendingScreen() {
+      document.getElementById('auth-screen').classList.add('hide');
+      document.getElementById('admin-app').classList.add('hide');
+      document.getElementById('main-app').classList.add('hide');
+      document.getElementById('pending-screen').classList.remove('hide');
+      const n = document.getElementById('pending-name');
+      const e = document.getElementById('pending-email');
+      if (n) n.textContent = currentUser.name || 'Player';
+      if (e) e.textContent = currentUser.email || '-';
+    }
+
     function enterUserApp() {
       document.getElementById('auth-screen').classList.add('hide');
       document.getElementById('admin-app').classList.add('hide');
+      document.getElementById('pending-screen').classList.add('hide');
       document.getElementById('main-app').classList.remove('hide');
       listenTournaments();
       listenRooms();
@@ -1165,6 +1234,7 @@
     function enterAdminApp() {
       document.getElementById('auth-screen').classList.add('hide');
       document.getElementById('main-app').classList.add('hide');
+      document.getElementById('pending-screen').classList.add('hide');
       document.getElementById('admin-app').classList.remove('hide');
       listenTournamentsAdmin();
       listenRoomsAdmin();
@@ -1487,30 +1557,83 @@
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
         document.getElementById('admin-u-count').textContent = list.length;
-        document.getElementById('admin-u-list').innerHTML = list.map(item => `
-          <div class="card p-4 animate-fade">
+        list.sort((a, b) => {
+          const sa = a.status === 'pending' ? 0 : (a.status === 'rejected' ? 2 : 1);
+          const sb = b.status === 'pending' ? 0 : (b.status === 'rejected' ? 2 : 1);
+          return sa - sb;
+        });
+        document.getElementById('admin-u-list').innerHTML = list.map(item => {
+          const st = item.status || 'approved';
+          const statusBadge = st === 'pending'
+            ? '<span class="bg-yellow-600 text-black text-[10px] font-bold px-2 py-0.5 rounded">PENDING</span>'
+            : (st === 'rejected'
+              ? '<span class="bg-red-700 text-white text-[10px] font-bold px-2 py-0.5 rounded">REJECTED</span>'
+              : '<span class="bg-green-700 text-white text-[10px] font-bold px-2 py-0.5 rounded">APPROVED</span>');
+          const safeName = (item.name || 'User').replace(/'/g, "\\'");
+          return `
+          <div class="card p-4 animate-fade ${st === 'pending' ? 'border border-yellow-600/50' : ''}">
             <div class="flex justify-between items-start gap-3">
-              <div class="flex-1">
-                <p class="font-bold">${item.name || 'No Name'}</p>
-                <p class="text-xs text-gray-400">${item.email || '-'} • UID: ${item.uid || '-'}</p>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                  <p class="font-bold">${item.name || 'No Name'}</p>
+                  ${statusBadge}
+                </div>
+                <p class="text-xs text-gray-400 truncate">${item.email || '-'} • UID: ${item.uid || '-'}</p>
                 <p class="text-sm text-green-400 mt-1">Balance: ₹${item.balance || 0} • Winnings: ₹${item.winnings || 0}</p>
                 ${item.createdBy === 'admin' ? '<span class="text-xs text-purple-400">Created by Admin</span>' : ''}
               </div>
               <div class="flex flex-col gap-2">
-                <button onclick="adminAddBalance('${item.id}', '${(item.name || 'User').replace(/'/g, '')}')" 
-                        class="btn-green px-3 py-2 rounded-lg text-xs whitespace-nowrap">
-                  + ADD BALANCE
-                </button>
-                <button onclick="adminDeleteUser('${item.id}', '${(item.name || 'User').replace(/'/g, '')}')" 
-                        class="btn-red px-3 py-2 rounded-lg text-xs whitespace-nowrap">
-                  DELETE
-                </button>
+                ${st === 'pending' ? `
+                  <button onclick="adminApproveUser('${item.id}', '${safeName}')" class="btn-green px-3 py-2 rounded-lg text-xs whitespace-nowrap">✓ APPROVE</button>
+                  <button onclick="adminRejectUser('${item.id}', '${safeName}')" class="btn-red px-3 py-2 rounded-lg text-xs whitespace-nowrap">✕ REJECT</button>
+                ` : `
+                  <button onclick="adminAddBalance('${item.id}', '${safeName}')" class="btn-green px-3 py-2 rounded-lg text-xs whitespace-nowrap">+ ADD BALANCE</button>
+                  ${st === 'approved' ? `<button onclick="adminRejectUser('${item.id}', '${safeName}')" class="bg-orange-800 text-orange-200 px-3 py-2 rounded-lg text-xs whitespace-nowrap">BLOCK</button>` : `<button onclick="adminApproveUser('${item.id}', '${safeName}')" class="btn-green px-3 py-2 rounded-lg text-xs whitespace-nowrap">✓ APPROVE</button>`}
+                `}
+                <button onclick="adminDeleteUser('${item.id}', '${safeName}')" class="btn-red px-3 py-2 rounded-lg text-xs whitespace-nowrap">DELETE</button>
               </div>
             </div>
-          </div>
-        `).join('') || '<p class="text-gray-500 text-center">No users</p>';
+          </div>`;
+        }).join('') || '<p class="text-gray-500 text-center">No users</p>';
       });
       unsubscribes.push(unsub);
+    }
+
+    async function adminApproveUser(userId, userName) {
+      if (!confirm(userName + ' ko APPROVE karein?\n\n10 Rs Welcome Bonus add hoga + full access.')) return;
+      try {
+        const userRef = db.collection('users').doc(userId);
+        const doc = await userRef.get();
+        if (!doc.exists) return alert('User not found');
+        const data = doc.data();
+        const alreadyBonus = (data.transactions || []).some(t => (t.title || '').includes('Welcome Bonus'));
+        const updates = { status: 'approved' };
+        if (!alreadyBonus && (data.balance || 0) === 0) {
+          updates.balance = 10;
+          updates.bonus = 10;
+          updates.transactions = [{
+            title: 'Welcome Bonus',
+            amount: 10,
+            type: 'credit',
+            date: new Date().toLocaleString('en-PK'),
+            status: 'Success'
+          }, ...(data.transactions || [])];
+        }
+        await userRef.update(updates);
+        alert(userName + ' APPROVED!\n\nUser ab login karke app use kar sakta hai.');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
+    }
+
+    async function adminRejectUser(userId, userName) {
+      if (!confirm(userName + ' ko REJECT / BLOCK karein?')) return;
+      try {
+        await db.collection('users').doc(userId).update({ status: 'rejected' });
+        alert(userName + ' rejected/blocked.');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
     }
 
     // =====================================================
@@ -2400,6 +2523,7 @@
           balance: balance,
           winnings: 0,
           bonus: balance,
+          status: 'approved',
           transactions: [{
             title: 'Admin Created - Welcome Bonus',
             amount: balance,
@@ -2685,11 +2809,19 @@
     }
 
     async function sendAdminChatMessage() {
-      if (!currentAdminChatUserId) return;
+      if (!currentAdminChatUserId) {
+        alert('Pehle kisi user ka chat open karo (list se Open pe click).');
+        return;
+      }
       const input = document.getElementById('admin-chat-input');
+      const btn = document.getElementById('admin-chat-send-btn');
       const text = (input.value || '').trim();
-      if (!text) return;
-
+      if (!text) {
+        alert('Message likho phir Send dabao');
+        return;
+      }
+      if (btn) { btn.disabled = true; btn.textContent = 'Sending...'; }
+      input.disabled = true;
       try {
         await db.collection('chats').doc(currentAdminChatUserId).collection('messages').add({
           text,
@@ -2702,8 +2834,14 @@
           unreadUser: firebase.firestore.FieldValue.increment(1)
         });
         input.value = '';
+        sendPushNotification(currentAdminChatUserId, 'FF ESPORTS - New Message', text).catch(() => {});
       } catch (err) {
-        alert('Error: ' + err.message);
+        console.error('Admin chat send error:', err);
+        alert('Send fail: ' + (err.message || err));
+      } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Send'; }
+        input.disabled = false;
+        input.focus();
       }
     }
 
