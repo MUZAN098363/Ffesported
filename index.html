@@ -1106,9 +1106,6 @@
         <button onclick="sideNav('profile')" class="side-menu-item w-full text-left" data-screen="profile">
           <span class="icon">👤</span> Profile
         </button>
-        <button onclick="sideNav('leaderboard')" class="side-menu-item w-full text-left" data-screen="leaderboard">
-          <span class="icon">🏅</span> Leaderboard
-        </button>
         <button onclick="sideNav('sensitivity')" class="side-menu-item w-full text-left" data-screen="sensitivity">
           <span class="icon">🎯</span> Sensitivity
         </button>
@@ -1177,15 +1174,6 @@
       <div id="active-rooms" class="space-y-3"></div>
     </div>
 
-    <!-- LEADERBOARD -->
-    <div id="screen-leaderboard" class="screen px-4 pt-4 hide">
-      <h1 class="text-xl font-bold mb-5">LEADERBOARD</h1>
-      <div class="card divide-y divide-gray-800">
-        <div class="flex items-center justify-between px-4 py-3.5"><div class="flex items-center gap-3"><span class="text-yellow-400 font-bold">1</span><span class="font-semibold">NG JASIM</span></div><span class="font-bold">2450</span></div>
-        <div class="flex items-center justify-between px-4 py-3.5"><div class="flex items-center gap-3"><span class="text-gray-300 font-bold">2</span><span class="font-semibold">NG SMOOTH</span></div><span class="font-bold">2150</span></div>
-        <div class="flex items-center justify-between px-4 py-3.5"><div class="flex items-center gap-3"><span class="text-orange-400 font-bold">3</span><span class="font-semibold">NG WHITE444</span></div><span class="font-bold">2001</span></div>
-      </div>
-    </div>
 
     <!-- WALLET -->
     <div id="screen-wallet" class="screen px-4 pt-4 hide">
@@ -1768,9 +1756,17 @@
             <input id="prize-desc" type="text" placeholder="Short description" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
             <div class="grid grid-cols-2 gap-3">
               <input id="prize-cost" type="number" placeholder="Cost (Rs)" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
-              <input id="prize-icon" type="text" placeholder="Icon emoji" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" value="🎁" />
+              <input id="prize-icon" type="text" placeholder="Icon emoji (optional)" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" value="🎁" />
             </div>
             <input id="prize-stock" type="number" placeholder="Stock (0 = unlimited)" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" value="0" />
+            <div>
+              <label class="text-sm text-gray-400 mb-1 block">Prize Photo (optional)</label>
+              <input type="file" id="prize-image-input" accept="image/*" onchange="previewPrizeImage(event)"
+                     class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-300" />
+            </div>
+            <div id="prize-preview-wrap" class="hide text-center">
+              <img id="prize-preview-img" src="" alt="Preview" class="max-h-32 mx-auto rounded-xl border border-gray-700" />
+            </div>
             <button onclick="addPrize()" class="w-full btn-yellow py-3 rounded-xl font-bold">ADD PRIZE</button>
           </div>
         </div>
@@ -1826,11 +1822,19 @@
             <input id="app-desc" type="text" placeholder="Short description" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
             <input id="app-link" type="url" placeholder="App Link (https://...)" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
             <div class="grid grid-cols-2 gap-3">
-              <input id="app-icon" type="text" placeholder="Icon emoji (🖼️)" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" value="🚀" />
+              <input id="app-icon" type="text" placeholder="Icon emoji (optional)" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" value="🚀" />
               <select id="app-status" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none">
                 <option value="active">ACTIVE (OPEN button)</option>
                 <option value="soon">COMING SOON</option>
               </select>
+            </div>
+            <div>
+              <label class="text-sm text-gray-400 mb-1 block">App Photo / Logo (optional)</label>
+              <input type="file" id="app-image-input" accept="image/*" onchange="previewAppImage(event)"
+                     class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-300" />
+            </div>
+            <div id="app-preview-wrap" class="hide text-center">
+              <img id="app-preview-img" src="" alt="Preview" class="max-h-32 mx-auto rounded-xl border border-gray-700" />
             </div>
             <button onclick="addApp()" class="w-full btn-yellow py-3 rounded-xl">ADD APP</button>
           </div>
@@ -3271,20 +3275,28 @@
       if (!title) return alert('App Name zaroori hai');
       if (status === 'active' && !link) return alert('Active app ke liye Link zaroori hai');
 
-      await db.collection('apps').add({
+      const data = {
         title,
         desc: desc || '',
         link: link || '',
         icon,
         status,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      };
+      if (pendingAppImage) data.image = pendingAppImage;
+
+      await db.collection('apps').add(data);
       alert('App add ho gaya!');
       document.getElementById('app-title').value = '';
       document.getElementById('app-desc').value = '';
       document.getElementById('app-link').value = '';
       document.getElementById('app-icon').value = '🚀';
       document.getElementById('app-status').value = 'active';
+      pendingAppImage = null;
+      const ai = document.getElementById('app-image-input');
+      if (ai) ai.value = '';
+      const aw = document.getElementById('app-preview-wrap');
+      if (aw) aw.classList.add('hide');
     }
 
     async function deleteApp(id) {
@@ -3301,7 +3313,9 @@
         el.innerHTML = list.length ? list.map(item => `
           <div class="card p-4 flex justify-between items-center animate-fade">
             <div class="flex items-center gap-3">
-              <span class="text-2xl">${item.icon || '🚀'}</span>
+              ${item.image
+                ? `<img src="${item.image}" class="w-12 h-12 rounded-xl object-cover border border-gray-700 flex-shrink-0" />`
+                : `<span class="text-2xl">${item.icon || '🚀'}</span>`}
               <div>
                 <p class="font-bold">${item.title}</p>
                 <p class="text-xs text-gray-400">${item.desc || ''} • ${item.status === 'active' ? 'ACTIVE' : 'SOON'}</p>
@@ -3337,7 +3351,9 @@
           const isActive = item.status === 'active';
           html += `
             <div class="card p-4 flex items-center gap-4 ${isActive ? '' : 'opacity-60'}">
-              <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center text-2xl">${item.icon || '🚀'}</div>
+              ${item.image
+                ? `<img src="${item.image}" class="w-14 h-14 rounded-xl object-cover border border-gray-700 flex-shrink-0" />`
+                : `<div class="w-14 h-14 rounded-xl bg-gradient-to-br from-green-500 to-teal-600 flex items-center justify-center text-2xl">${item.icon || '🚀'}</div>`}
               <div class="flex-1">
                 <h3 class="font-bold">${item.title}</h3>
                 <p class="text-xs text-gray-400">${item.desc || ''}</p>
@@ -3354,6 +3370,49 @@
       unsubscribes.push(unsub);
     }
 
+
+    // ===== PRIZE / APP IMAGE UPLOAD (base64) =====
+    let pendingPrizeImage = null;
+    let pendingAppImage = null;
+
+    function previewPrizeImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (file.size > 400 * 1024) {
+        alert('Photo bari hai. 400KB se chhoti photo choose karo.');
+        event.target.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        pendingPrizeImage = e.target.result;
+        const wrap = document.getElementById('prize-preview-wrap');
+        const img = document.getElementById('prize-preview-img');
+        if (img) img.src = pendingPrizeImage;
+        if (wrap) wrap.classList.remove('hide');
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function previewAppImage(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (file.size > 400 * 1024) {
+        alert('Photo bari hai. 400KB se chhoti photo choose karo.');
+        event.target.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        pendingAppImage = e.target.result;
+        const wrap = document.getElementById('app-preview-wrap');
+        const img = document.getElementById('app-preview-img');
+        if (img) img.src = pendingAppImage;
+        if (wrap) wrap.classList.remove('hide');
+      };
+      reader.readAsDataURL(file);
+    }
+
     // ===== REDEEM PRIZES =====
     async function addPrize() {
       const title = document.getElementById('prize-title').value.trim();
@@ -3364,7 +3423,7 @@
       if (!title) return alert('Prize Name zaroori hai');
       if (cost <= 0) return alert('Cost 0 se zyada hona chahiye');
 
-      await db.collection('prizes').add({
+      const data = {
         title,
         desc: desc || '',
         cost,
@@ -3372,13 +3431,21 @@
         stock,
         active: true,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
-      });
+      };
+      if (pendingPrizeImage) data.image = pendingPrizeImage;
+
+      await db.collection('prizes').add(data);
       alert('Prize add ho gaya!');
       document.getElementById('prize-title').value = '';
       document.getElementById('prize-desc').value = '';
       document.getElementById('prize-cost').value = '';
       document.getElementById('prize-icon').value = '🎁';
       document.getElementById('prize-stock').value = '0';
+      pendingPrizeImage = null;
+      const pi = document.getElementById('prize-image-input');
+      if (pi) pi.value = '';
+      const pw = document.getElementById('prize-preview-wrap');
+      if (pw) pw.classList.add('hide');
     }
 
     async function deletePrize(id) {
@@ -3395,7 +3462,9 @@
         el.innerHTML = list.length ? list.map(item => `
           <div class="card p-4 flex justify-between items-center animate-fade">
             <div class="flex items-center gap-3">
-              <span class="text-2xl">${item.icon || '🎁'}</span>
+              ${item.image
+                ? `<img src="${item.image}" class="w-12 h-12 rounded-xl object-cover border border-gray-700 flex-shrink-0" />`
+                : `<span class="text-2xl">${item.icon || '🎁'}</span>`}
               <div>
                 <p class="font-bold">${item.title}</p>
                 <p class="text-xs text-gray-400">${item.desc || ''} • Cost: ₹${item.cost}</p>
@@ -3415,7 +3484,9 @@
           el.innerHTML = list.length ? list.map(item => `
             <div class="card p-4 flex justify-between items-center">
               <div class="flex items-center gap-3">
-                <span class="text-2xl">${item.icon || '🎁'}</span>
+                ${item.image
+                  ? `<img src="${item.image}" class="w-12 h-12 rounded-xl object-cover border border-gray-700 flex-shrink-0" />`
+                  : `<span class="text-2xl">${item.icon || '🎁'}</span>`}
                 <div>
                   <p class="font-bold">${item.title}</p>
                   <p class="text-xs text-gray-400">Cost: ₹${item.cost}</p>
@@ -3507,7 +3578,9 @@
         const isSoldOut = stock !== 0 && stock <= 0;
         return `
         <div class="card p-4 flex gap-3 items-center animate-fade ${isSoldOut ? 'opacity-50' : ''}">
-          <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-yellow-600 to-orange-700 flex items-center justify-center text-2xl flex-shrink-0">${p.icon || '🎁'}</div>
+          ${p.image
+            ? `<img src="${p.image}" class="w-14 h-14 rounded-xl object-cover border border-gray-700 flex-shrink-0" />`
+            : `<div class="w-14 h-14 rounded-xl bg-gradient-to-br from-yellow-600 to-orange-700 flex items-center justify-center text-2xl flex-shrink-0">${p.icon || '🎁'}</div>`}
           <div class="flex-1 min-w-0">
             <h4 class="font-bold truncate">${p.title}</h4>
             <p class="text-xs text-gray-400 truncate">${p.desc || ''}</p>
@@ -3673,7 +3746,7 @@
     }
 
     function showScreen(name) {
-      ['home','tournaments','matchroom','leaderboard','sensitivity','wallet','profile','moreapps','redeem','chat','userchat','paymentproof'].forEach(s => {
+      ['home','tournaments','matchroom','sensitivity','wallet','profile','moreapps','redeem','chat','userchat','paymentproof'].forEach(s => {
         const screen = document.getElementById('screen-' + s);
         if (screen) screen.classList.add('hide');
       });
