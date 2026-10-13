@@ -1396,7 +1396,7 @@
           <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center text-2xl flex-shrink-0">📲</div>
           <div class="flex-1 min-w-0">
             <h3 class="font-bold text-[#FFC107]">FF Esports Android App</h3>
-            <p class="text-xs text-gray-400 mt-0.5">Official APK download • Android only</p>
+            <p class="text-xs text-gray-400 mt-0.5">Official APK • 7.22 MB • Android only</p>
           </div>
         </div>
         <button type="button" id="apk-download-btn" onclick="startAppDownload()"
@@ -1414,7 +1414,7 @@
           </div>
           <p id="apk-progress-sub" class="text-[10px] text-center text-gray-500 mt-2">Please wait...</p>
         </div>
-        <p class="text-[10px] text-center text-gray-500 mt-2">Install ke baad “Unknown sources” allow karein</p>
+        <p class="text-[10px] text-center text-gray-500 mt-2">Download ke baad ZIP extract karein → APK install karein<br>Unknown sources allow karein</p>
       </div>
 
       <div id="more-apps-list" class="space-y-4">
@@ -3750,6 +3750,7 @@
     // SCREENS
     // =====================================================
     // ===== APP DOWNLOAD (MediaFire + progress bar) =====
+    // MediaFire link (ZIP 7.22 MB containing the APK)
     const APP_DOWNLOAD_URL = 'https://www.mediafire.com/file/4r5nesn2pf8w7sl/Untitled/file';
     let apkDownloadBusy = false;
 
@@ -3784,36 +3785,37 @@
 
       let pct = 0;
       const stages = [
-        { at: 15, label: 'Connecting...', sub: 'Server se connect ho raha hai' },
-        { at: 35, label: 'Fetching APK...', sub: 'File info mil rahi hai' },
-        { at: 60, label: 'Downloading...', sub: 'APK download shuru' },
-        { at: 85, label: 'Almost done...', sub: 'Finalizing package' },
+        { at: 12, label: 'Connecting...', sub: 'Server se connect ho raha hai' },
+        { at: 30, label: 'Fetching package...', sub: '7.22 MB ZIP file mil rahi hai' },
+        { at: 55, label: 'Downloading...', sub: 'APK package download ho raha hai' },
+        { at: 80, label: 'Almost done...', sub: 'Finalizing...' },
         { at: 100, label: 'Ready!', sub: 'MediaFire pe redirect ho raha hai...' }
       ];
 
       const tick = setInterval(() => {
         const remaining = 100 - pct;
-        const step = Math.max(1, Math.ceil(remaining * 0.08) + Math.floor(Math.random() * 3));
+        const step = Math.max(1, Math.ceil(remaining * 0.07) + Math.floor(Math.random() * 3));
         pct = Math.min(100, pct + step);
 
         if (bar) bar.style.width = pct + '%';
         if (pctEl) pctEl.textContent = pct + '%';
 
         for (const s of stages) {
-          if (pct >= s.at && pct < s.at + 20) {
+          if (pct >= s.at && pct < s.at + 18) {
             if (label) label.textContent = s.label;
             if (sub) sub.textContent = s.sub;
           }
         }
         if (pct >= 100) {
           if (label) label.textContent = 'Ready!';
-          if (sub) sub.textContent = 'Opening download page...';
+          if (sub) sub.textContent = 'Opening MediaFire download...';
         }
 
         if (pct >= 100) {
           clearInterval(tick);
           if (bar) bar.classList.remove('downloading');
           setTimeout(() => {
+            // Open MediaFire in new tab
             window.open(APP_DOWNLOAD_URL, '_blank', 'noopener');
             setTimeout(() => {
               apkDownloadBusy = false;
@@ -3827,12 +3829,12 @@
                   progressWrap.classList.add('hide');
                   if (bar) bar.style.width = '0%';
                   if (pctEl) pctEl.textContent = '0%';
-                }, 800);
+                }, 900);
               }
-            }, 400);
-          }, 350);
+            }, 500);
+          }, 400);
         }
-      }, 120);
+      }, 110);
     }
 
     function buySensitivity() {
