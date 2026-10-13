@@ -43,55 +43,59 @@
   <style>
     * { font-family: 'Poppins', sans-serif; -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
     body {
-      background: #070708;
+      background: #050506;
       color: white;
       overflow-x: hidden;
       margin: 0;
       background-image:
-        radial-gradient(ellipse 90% 55% at 50% -25%, rgba(123,44,191,0.28), transparent 55%),
-        radial-gradient(ellipse 50% 35% at 100% 0%, rgba(255,193,7,0.08), transparent 50%),
-        radial-gradient(ellipse 40% 30% at 0% 80%, rgba(123,44,191,0.08), transparent);
+        radial-gradient(ellipse 100% 60% at 50% -30%, rgba(123,44,191,0.35), transparent 55%),
+        radial-gradient(ellipse 55% 40% at 100% 5%, rgba(255,193,7,0.1), transparent 50%),
+        radial-gradient(ellipse 45% 35% at 0% 85%, rgba(91,33,182,0.12), transparent);
       background-attachment: fixed;
     }
     .card {
-      background: linear-gradient(165deg, #1E1E22 0%, #141418 55%, #101012 100%);
-      border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.09);
+      background: linear-gradient(170deg, #222228 0%, #16161a 45%, #0e0e11 100%);
+      border-radius: 22px;
+      border: 1px solid rgba(255,255,255,0.1);
       box-shadow:
-        0 8px 32px rgba(0,0,0,0.45),
-        0 2px 8px rgba(0,0,0,0.3),
-        inset 0 1px 0 rgba(255,255,255,0.04);
+        0 12px 40px rgba(0,0,0,0.55),
+        0 4px 12px rgba(0,0,0,0.35),
+        inset 0 1px 0 rgba(255,255,255,0.06),
+        inset 0 -1px 0 rgba(0,0,0,0.2);
     }
     .btn-yellow {
-      background: linear-gradient(135deg, #FFC107 0%, #FF9800 55%, #F57C00 100%);
+      background: linear-gradient(145deg, #FFD54F 0%, #FFC107 30%, #FF9800 70%, #E65100 100%);
       color: #000;
       font-weight: 800;
       box-shadow:
-        0 6px 24px rgba(255,193,7,0.35),
-        0 2px 8px rgba(255,152,0,0.25),
-        inset 0 1px 0 rgba(255,255,255,0.35);
-      letter-spacing: 0.02em;
+        0 8px 28px rgba(255,193,7,0.4),
+        0 3px 10px rgba(255,152,0,0.3),
+        inset 0 1px 0 rgba(255,255,255,0.45),
+        inset 0 -2px 0 rgba(0,0,0,0.15);
+      letter-spacing: 0.03em;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.25);
     }
     .btn-purple {
-      background: linear-gradient(135deg, #8B3DCF 0%, #7B2CBF 40%, #5B21B6 100%);
+      background: linear-gradient(145deg, #9B4DE0 0%, #7B2CBF 40%, #5B21B6 75%, #3B0764 100%);
       color: white;
       font-weight: 700;
       box-shadow:
-        0 6px 22px rgba(123,44,191,0.4),
-        0 2px 8px rgba(91,33,182,0.3),
-        inset 0 1px 0 rgba(255,255,255,0.15);
+        0 8px 28px rgba(123,44,191,0.45),
+        0 3px 10px rgba(91,33,182,0.35),
+        inset 0 1px 0 rgba(255,255,255,0.2),
+        inset 0 -2px 0 rgba(0,0,0,0.2);
     }
     .btn-red {
-      background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+      background: linear-gradient(145deg, #F87171 0%, #EF4444 40%, #DC2626 100%);
       color: white;
       font-weight: 700;
-      box-shadow: 0 4px 16px rgba(239,68,68,0.3);
+      box-shadow: 0 6px 20px rgba(239,68,68,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
     }
     .btn-green {
-      background: linear-gradient(135deg, #22C55E 0%, #16A34A 100%);
+      background: linear-gradient(145deg, #4ADE80 0%, #22C55E 40%, #16A34A 100%);
       color: white;
       font-weight: 700;
-      box-shadow: 0 4px 16px rgba(34,197,94,0.3);
+      box-shadow: 0 6px 20px rgba(34,197,94,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
     }
     .nav-item {
       transition: color 0.2s, transform 0.15s, background 0.2s;
@@ -100,16 +104,16 @@
     }
     .nav-item.active {
       color: #FFC107;
-      background: rgba(255,193,7,0.12);
-      box-shadow: 0 0 20px rgba(255,193,7,0.08);
+      background: rgba(255,193,7,0.14);
+      box-shadow: 0 0 24px rgba(255,193,7,0.12), inset 0 0 12px rgba(255,193,7,0.05);
     }
-    .nav-item.active span:first-child { transform: scale(1.18); }
+    .nav-item.active span:first-child { transform: scale(1.2); }
     .hide { display: none !important; }
-    .screen { min-height: 100vh; padding-bottom: 100px; }
-    .glow { box-shadow: 0 0 40px rgba(123, 44, 191, 0.4), 0 0 80px rgba(123,44,191,0.15); }
+    .screen { min-height: 100vh; padding-bottom: 104px; }
+    .glow { box-shadow: 0 0 48px rgba(123, 44, 191, 0.45), 0 0 90px rgba(123,44,191,0.18); }
     ::-webkit-scrollbar { width: 0; height: 0; }
     input, select { color: white; }
-    input::placeholder { color: #666; }
+    input::placeholder { color: #555; }
     select option { background: #1A1A1A; color: white; }
 
     /* Screen headers */
@@ -117,22 +121,22 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      margin-bottom: 22px;
+      margin-bottom: 24px;
     }
     .screen-header h1 {
-      font-size: 1.3rem;
+      font-size: 1.35rem;
       font-weight: 800;
       letter-spacing: -0.03em;
-      text-shadow: 0 2px 12px rgba(0,0,0,0.4);
+      text-shadow: 0 2px 16px rgba(0,0,0,0.5);
     }
 
     /* Bottom nav */
     .bottom-nav {
-      background: rgba(10,10,12,0.94) !important;
-      backdrop-filter: blur(24px) saturate(1.4);
-      -webkit-backdrop-filter: blur(24px) saturate(1.4);
-      border-top: 1px solid rgba(255,255,255,0.1) !important;
-      box-shadow: 0 -8px 32px rgba(0,0,0,0.4);
+      background: rgba(8,8,10,0.96) !important;
+      backdrop-filter: blur(28px) saturate(1.5);
+      -webkit-backdrop-filter: blur(28px) saturate(1.5);
+      border-top: 1px solid rgba(255,255,255,0.12) !important;
+      box-shadow: 0 -12px 40px rgba(0,0,0,0.5);
       padding-bottom: max(8px, env(safe-area-inset-bottom));
     }
 
@@ -214,16 +218,16 @@
     }
     #side-menu {
       position: fixed; top: 0; left: 0; bottom: 0;
-      width: 80%; max-width: 310px;
-      background: linear-gradient(180deg, #141418 0%, #0E0E10 100%);
+      width: 82%; max-width: 320px;
+      background: linear-gradient(185deg, #1a1a20 0%, #0c0c0e 60%, #08080a 100%);
       z-index: 210;
       transform: translateX(-105%);
       transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
       display: flex; flex-direction: column;
-      box-shadow: 16px 0 48px rgba(0,0,0,0.7), 4px 0 16px rgba(123,44,191,0.15);
+      box-shadow: 20px 0 60px rgba(0,0,0,0.8), 6px 0 24px rgba(123,44,191,0.2);
       overflow-y: auto;
       overflow-x: hidden;
-      border-right: 1px solid rgba(255,255,255,0.06);
+      border-right: 1px solid rgba(255,255,255,0.08);
     }
     #side-menu.open {
       transform: translateX(0);
@@ -1130,9 +1134,6 @@
         </button>
         <button onclick="sideNav('wallet')" class="side-menu-item w-full text-left" data-screen="wallet">
           <span class="icon">💰</span> Wallet
-        </button>
-        <button onclick="sideNav('paymentproof')" class="side-menu-item w-full text-left" data-screen="paymentproof">
-          <span class="icon">🧾</span> Payment Proof
         </button>
         <button onclick="sideNav('moreapps')" class="side-menu-item w-full text-left" data-screen="moreapps">
           <span class="icon">📱</span> More Apps
