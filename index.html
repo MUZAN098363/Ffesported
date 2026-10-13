@@ -941,6 +941,17 @@
       position: relative;
     }
 
+    /* APK download progress */
+    @keyframes apkShimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+    #apk-progress-bar.downloading {
+      background: linear-gradient(90deg, #7B2CBF 0%, #FFC107 40%, #FF9800 60%, #7B2CBF 100%);
+      background-size: 200% 100%;
+      animation: apkShimmer 1.4s linear infinite;
+    }
+
   </style>
 </head>
 <body>
@@ -1103,9 +1114,9 @@
         <button onclick="sideNav('moreapps')" class="side-menu-item w-full text-left" data-screen="moreapps">
           <span class="icon">📱</span> More Apps
         </button>
-        <a href="./base.apk" download="FF-Esports.apk" class="side-menu-item w-full text-left no-underline" style="display:flex;">
+        <button type="button" onclick="startAppDownload()" class="side-menu-item w-full text-left" style="display:flex;">
           <span class="icon">⬇️</span> Download App
-        </a>
+        </button>
         <button onclick="sideNav('profile')" class="side-menu-item w-full text-left" data-screen="profile">
           <span class="icon">👤</span> Profile
         </button>
@@ -1388,10 +1399,21 @@
             <p class="text-xs text-gray-400 mt-0.5">Official APK download • Android only</p>
           </div>
         </div>
-        <a href="./base.apk" download="FF-Esports.apk"
-           class="mt-4 w-full btn-yellow py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 no-underline">
+        <button type="button" id="apk-download-btn" onclick="startAppDownload()"
+           class="mt-4 w-full btn-yellow py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2">
           <span>⬇️</span> DOWNLOAD APP (APK)
-        </a>
+        </button>
+        <div id="apk-download-progress" class="hide mt-3">
+          <div class="flex justify-between text-xs mb-1.5">
+            <span id="apk-progress-label" class="text-[#FFC107] font-semibold">Preparing download...</span>
+            <span id="apk-progress-pct" class="text-gray-400 font-mono">0%</span>
+          </div>
+          <div class="w-full h-2.5 bg-[#0D0D0D] rounded-full overflow-hidden border border-gray-700">
+            <div id="apk-progress-bar" class="h-full rounded-full transition-all duration-200 ease-out"
+                 style="width:0%;background:linear-gradient(90deg,#7B2CBF,#FFC107,#FF9800);box-shadow:0 0 12px rgba(255,193,7,0.45);"></div>
+          </div>
+          <p id="apk-progress-sub" class="text-[10px] text-center text-gray-500 mt-2">Please wait...</p>
+        </div>
         <p class="text-[10px] text-center text-gray-500 mt-2">Install ke baad “Unknown sources” allow karein</p>
       </div>
 
@@ -3727,6 +3749,92 @@
     // =====================================================
     // SCREENS
     // =====================================================
+    // ===== APP DOWNLOAD (MediaFire + progress bar) =====
+    const APP_DOWNLOAD_URL = 'https://www.mediafire.com/file/4r5nesn2pf8w7sl/Untitled/file';
+    let apkDownloadBusy = false;
+
+    function startAppDownload() {
+      if (apkDownloadBusy) return;
+      apkDownloadBusy = true;
+
+      const progressWrap = document.getElementById('apk-download-progress');
+      const bar = document.getElementById('apk-progress-bar');
+      const pctEl = document.getElementById('apk-progress-pct');
+      const label = document.getElementById('apk-progress-label');
+      const sub = document.getElementById('apk-progress-sub');
+      const btn = document.getElementById('apk-download-btn');
+
+      if (progressWrap) {
+        progressWrap.classList.remove('hide');
+        if (bar) {
+          bar.style.width = '0%';
+          bar.classList.add('downloading');
+        }
+        if (pctEl) pctEl.textContent = '0%';
+        if (label) label.textContent = 'Preparing download...';
+        if (sub) sub.textContent = 'Connecting to server...';
+      }
+      if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+        btn.innerHTML = '<span class="animate-pulse-slow">⏳</span> DOWNLOADING...';
+      }
+
+      try { closeSideMenu(); } catch (e) {}
+
+      let pct = 0;
+      const stages = [
+        { at: 15, label: 'Connecting...', sub: 'Server se connect ho raha hai' },
+        { at: 35, label: 'Fetching APK...', sub: 'File info mil rahi hai' },
+        { at: 60, label: 'Downloading...', sub: 'APK download shuru' },
+        { at: 85, label: 'Almost done...', sub: 'Finalizing package' },
+        { at: 100, label: 'Ready!', sub: 'MediaFire pe redirect ho raha hai...' }
+      ];
+
+      const tick = setInterval(() => {
+        const remaining = 100 - pct;
+        const step = Math.max(1, Math.ceil(remaining * 0.08) + Math.floor(Math.random() * 3));
+        pct = Math.min(100, pct + step);
+
+        if (bar) bar.style.width = pct + '%';
+        if (pctEl) pctEl.textContent = pct + '%';
+
+        for (const s of stages) {
+          if (pct >= s.at && pct < s.at + 20) {
+            if (label) label.textContent = s.label;
+            if (sub) sub.textContent = s.sub;
+          }
+        }
+        if (pct >= 100) {
+          if (label) label.textContent = 'Ready!';
+          if (sub) sub.textContent = 'Opening download page...';
+        }
+
+        if (pct >= 100) {
+          clearInterval(tick);
+          if (bar) bar.classList.remove('downloading');
+          setTimeout(() => {
+            window.open(APP_DOWNLOAD_URL, '_blank', 'noopener');
+            setTimeout(() => {
+              apkDownloadBusy = false;
+              if (btn) {
+                btn.disabled = false;
+                btn.style.opacity = '1';
+                btn.innerHTML = '<span>⬇️</span> DOWNLOAD APP (APK)';
+              }
+              if (progressWrap) {
+                setTimeout(() => {
+                  progressWrap.classList.add('hide');
+                  if (bar) bar.style.width = '0%';
+                  if (pctEl) pctEl.textContent = '0%';
+                }, 800);
+              }
+            }, 400);
+          }, 350);
+        }
+      }, 120);
+    }
+
     function buySensitivity() {
       const device = document.getElementById('device-name').value.trim();
       if (!device) {
