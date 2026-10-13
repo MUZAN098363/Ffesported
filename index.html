@@ -1103,6 +1103,9 @@
         <button onclick="sideNav('moreapps')" class="side-menu-item w-full text-left" data-screen="moreapps">
           <span class="icon">📱</span> More Apps
         </button>
+        <a href="./base.apk" download="FF-Esports.apk" class="side-menu-item w-full text-left no-underline" style="display:flex;">
+          <span class="icon">⬇️</span> Download App
+        </a>
         <button onclick="sideNav('profile')" class="side-menu-item w-full text-left" data-screen="profile">
           <span class="icon">👤</span> Profile
         </button>
@@ -1375,6 +1378,22 @@
         <h1 class="text-xl font-bold">MORE APPS</h1>
       </div>
       <p class="text-sm text-gray-400 mb-5">Hamari dusri apps try karo</p>
+
+      <!-- DOWNLOAD ANDROID APP -->
+      <div class="card p-4 mb-5 border border-[#FFC107]/40 animate-glow">
+        <div class="flex items-center gap-4">
+          <div class="w-14 h-14 rounded-xl bg-gradient-to-br from-yellow-500 to-orange-600 flex items-center justify-center text-2xl flex-shrink-0">📲</div>
+          <div class="flex-1 min-w-0">
+            <h3 class="font-bold text-[#FFC107]">FF Esports Android App</h3>
+            <p class="text-xs text-gray-400 mt-0.5">Official APK download • Android only</p>
+          </div>
+        </div>
+        <a href="./base.apk" download="FF-Esports.apk"
+           class="mt-4 w-full btn-yellow py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 no-underline">
+          <span>⬇️</span> DOWNLOAD APP (APK)
+        </a>
+        <p class="text-[10px] text-center text-gray-500 mt-2">Install ke baad “Unknown sources” allow karein</p>
+      </div>
 
       <div id="more-apps-list" class="space-y-4">
         <!-- Dynamic apps from Firebase -->
