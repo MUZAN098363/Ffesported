@@ -1499,8 +1499,14 @@
         </div>
       </div>
 
+      <div id="appstore-desc-wrap" class="hide mb-5">
+        <h3 class="font-bold mb-2">About</h3>
+        <p id="appstore-desc-text" class="text-sm text-gray-300 whitespace-pre-wrap leading-relaxed"></p>
+      </div>
+
       <h3 class="font-bold mb-3">Screenshots</h3>
-      <div class="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1" style="-webkit-overflow-scrolling:touch;">
+      <div id="appstore-screenshots" class="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1" style="-webkit-overflow-scrolling:touch;">
+        <!-- filled by JS; default placeholders if none -->
         <div class="flex-shrink-0 w-28 h-40 rounded-2xl flex items-center justify-center text-3xl" style="background:linear-gradient(160deg,#4C1D95,#1e1b4b);">🏆</div>
         <div class="flex-shrink-0 w-28 h-40 rounded-2xl flex items-center justify-center text-3xl" style="background:linear-gradient(160deg,#78350f,#1c1917);">💰</div>
         <div class="flex-shrink-0 w-28 h-40 rounded-2xl flex items-center justify-center text-3xl" style="background:linear-gradient(160deg,#1e3a5f,#0f172a);">🎮</div>
@@ -1934,22 +1940,35 @@
 
       <!-- More Apps -->
       <div id="admin-apps" class="hide">
-        <!-- App Store main icon (FF Esports featured card) -->
+        <!-- App Store details (icon + desc + screenshots) -->
         <div class="card p-4 mb-5">
-          <h3 class="font-bold mb-2 text-[#FFC107]">📲 App Store Icon (FF Esports)</h3>
-          <p class="text-xs text-gray-400 mb-3">Yeh icon More Apps card + App Store page pe dikhega. Max ~300KB.</p>
+          <h3 class="font-bold mb-2 text-[#FFC107]">📲 App Store (FF Esports)</h3>
+          <p class="text-xs text-gray-400 mb-3">Icon, description aur screenshots – More Apps / App Store page pe dikhenge. Har photo max ~300KB.</p>
           <div class="space-y-3">
             <div>
-              <label class="text-sm text-gray-400 mb-1 block">Upload App Icon</label>
+              <label class="text-sm text-gray-400 mb-1 block">App Icon</label>
               <input type="file" id="appstore-icon-input" accept="image/*" onchange="previewAppStoreIcon(event)"
                      class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-300" />
             </div>
             <div id="appstore-icon-preview-wrap" class="hide text-center">
               <img id="appstore-icon-preview" src="" alt="Icon" class="w-20 h-20 mx-auto rounded-2xl border border-yellow-500/40 object-cover" />
             </div>
-            <div id="appstore-icon-current" class="text-center text-sm text-gray-500">Current: default</div>
-            <button onclick="saveAppStoreIcon()" class="w-full btn-yellow py-3 rounded-xl font-bold">SAVE APP ICON</button>
-            <button onclick="clearAppStoreIcon()" class="w-full bg-red-900/40 border border-red-700 text-red-400 py-2 rounded-xl text-sm">Remove Icon (use default)</button>
+            <div id="appstore-icon-current" class="text-center text-sm text-gray-500">Current icon: default</div>
+
+            <div>
+              <label class="text-sm text-gray-400 mb-1 block">Description / About</label>
+              <textarea id="appstore-desc-input" rows="3" placeholder="App ke baare mein likho..." class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none resize-none text-sm"></textarea>
+            </div>
+
+            <div>
+              <label class="text-sm text-gray-400 mb-1 block">Add Screenshot (multiple add kar sakte ho)</label>
+              <input type="file" id="appstore-ss-input" accept="image/*" onchange="addAppStoreScreenshot(event)"
+                     class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-3 py-2.5 text-sm text-gray-300" />
+            </div>
+            <div id="appstore-ss-admin-list" class="flex flex-wrap gap-2"></div>
+
+            <button onclick="saveAppStoreDetails()" class="w-full btn-yellow py-3 rounded-xl font-bold">SAVE APP STORE DETAILS</button>
+            <button onclick="clearAppStoreIcon()" class="w-full bg-red-900/40 border border-red-700 text-red-400 py-2 rounded-xl text-sm">Clear Icon Only</button>
           </div>
         </div>
 
@@ -3856,9 +3875,13 @@
     let apkDownloadBusy = false;
     let pendingAppStoreIcon = null;
     let cachedAppStoreIcon = null;
+    let cachedAppStoreDesc = '';
+    let cachedAppStoreScreenshots = []; // base64 strings
+    let pendingAppStoreScreenshots = null; // working copy while editing in admin
 
     function openAppStore() {
       applyAppStoreIconUI();
+      renderAppStoreDetails();
       showScreen('appstore');
     }
 
@@ -3881,16 +3904,69 @@
       reader.readAsDataURL(file);
     }
 
-    async function saveAppStoreIcon() {
-      const icon = pendingAppStoreIcon || cachedAppStoreIcon;
-      if (!icon) return alert('Pehle icon photo choose karo');
+    function addAppStoreScreenshot(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      if (file.size > 350 * 1024) {
+        alert('Screenshot bari hai. 350KB se chhoti image choose karo.');
+        event.target.value = '';
+        return;
+      }
+      if (!pendingAppStoreScreenshots) {
+        pendingAppStoreScreenshots = (cachedAppStoreScreenshots || []).slice();
+      }
+      if (pendingAppStoreScreenshots.length >= 8) {
+        alert('Max 8 screenshots');
+        event.target.value = '';
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        pendingAppStoreScreenshots.push(e.target.result);
+        renderAdminAppStoreScreenshots();
+        event.target.value = '';
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function removeAppStoreScreenshot(idx) {
+      if (!pendingAppStoreScreenshots) {
+        pendingAppStoreScreenshots = (cachedAppStoreScreenshots || []).slice();
+      }
+      pendingAppStoreScreenshots.splice(idx, 1);
+      renderAdminAppStoreScreenshots();
+    }
+
+    function renderAdminAppStoreScreenshots() {
+      const el = document.getElementById('appstore-ss-admin-list');
+      if (!el) return;
+      const list = pendingAppStoreScreenshots != null ? pendingAppStoreScreenshots : (cachedAppStoreScreenshots || []);
+      if (!list.length) {
+        el.innerHTML = '<p class="text-xs text-gray-500">Abhi koi screenshot nahi</p>';
+        return;
+      }
+      el.innerHTML = list.map((src, i) => `
+        <div class="relative">
+          <img src="${src}" class="w-16 h-24 object-cover rounded-lg border border-gray-700" />
+          <button type="button" onclick="removeAppStoreScreenshot(${i})" class="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-red-600 text-white text-xs leading-5">×</button>
+        </div>
+      `).join('');
+    }
+
+    async function saveAppStoreDetails() {
+      const icon = pendingAppStoreIcon || cachedAppStoreIcon || '';
+      const desc = (document.getElementById('appstore-desc-input') && document.getElementById('appstore-desc-input').value || '').trim();
+      const screenshots = pendingAppStoreScreenshots != null ? pendingAppStoreScreenshots : (cachedAppStoreScreenshots || []);
       try {
         await db.collection('settings').doc('appStore').set({
           icon,
+          desc,
+          screenshots,
           updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         }, { merge: true });
         pendingAppStoreIcon = null;
-        alert('App icon save ho gaya!');
+        pendingAppStoreScreenshots = null;
+        alert('App Store details save ho gaye!');
         loadAdminAppStoreIcon();
       } catch (err) {
         alert('Error: ' + err.message);
@@ -3922,28 +3998,36 @@
       const el = document.getElementById('appstore-icon-current');
       try {
         const doc = await db.collection('settings').doc('appStore').get();
-        if (doc.exists && doc.data().icon) {
-          cachedAppStoreIcon = doc.data().icon;
-          if (el) el.innerHTML = '<img src="' + cachedAppStoreIcon + '" class="w-16 h-16 mx-auto rounded-2xl object-cover border border-yellow-500/40" />';
-        } else {
-          cachedAppStoreIcon = null;
-          if (el) el.textContent = 'Current: default';
+        const d = doc.exists ? doc.data() : {};
+        cachedAppStoreIcon = d.icon || null;
+        cachedAppStoreDesc = d.desc || '';
+        cachedAppStoreScreenshots = Array.isArray(d.screenshots) ? d.screenshots : [];
+        pendingAppStoreScreenshots = null;
+
+        if (el) {
+          el.innerHTML = cachedAppStoreIcon
+            ? '<img src="' + cachedAppStoreIcon + '" class="w-16 h-16 mx-auto rounded-2xl object-cover border border-yellow-500/40" />'
+            : 'Current icon: default';
         }
+        const descInput = document.getElementById('appstore-desc-input');
+        if (descInput) descInput.value = cachedAppStoreDesc;
+        renderAdminAppStoreScreenshots();
         applyAppStoreIconUI();
+        renderAppStoreDetails();
       } catch (e) {
-        if (el) el.textContent = 'Error loading icon';
+        if (el) el.textContent = 'Error loading';
       }
     }
 
     function listenAppStoreIcon() {
       const unsub = db.collection('settings').doc('appStore').onSnapshot(doc => {
-        if (doc.exists && doc.data().icon) {
-          cachedAppStoreIcon = doc.data().icon;
-        } else {
-          cachedAppStoreIcon = null;
-        }
+        const d = doc.exists ? doc.data() : {};
+        cachedAppStoreIcon = d.icon || null;
+        cachedAppStoreDesc = d.desc || '';
+        cachedAppStoreScreenshots = Array.isArray(d.screenshots) ? d.screenshots : [];
         applyAppStoreIconUI();
-      }, err => console.log('App store icon listen:', err));
+        renderAppStoreDetails();
+      }, err => console.log('App store listen:', err));
       unsubscribes.push(unsub);
     }
 
@@ -3966,6 +4050,32 @@
           if (fb) fb.classList.remove('hide');
         }
       });
+    }
+
+    function renderAppStoreDetails() {
+      const descWrap = document.getElementById('appstore-desc-wrap');
+      const descText = document.getElementById('appstore-desc-text');
+      if (descWrap && descText) {
+        if (cachedAppStoreDesc) {
+          descText.textContent = cachedAppStoreDesc;
+          descWrap.classList.remove('hide');
+        } else {
+          descWrap.classList.add('hide');
+        }
+      }
+      const ssEl = document.getElementById('appstore-screenshots');
+      if (!ssEl) return;
+      if (cachedAppStoreScreenshots && cachedAppStoreScreenshots.length) {
+        ssEl.innerHTML = cachedAppStoreScreenshots.map(src =>
+          `<img src="${src}" alt="Screenshot" class="flex-shrink-0 w-28 h-40 rounded-2xl object-cover border border-gray-700 cursor-pointer" onclick="viewScreenshot(this.src)" />`
+        ).join('');
+      } else {
+        ssEl.innerHTML = `
+          <div class="flex-shrink-0 w-28 h-40 rounded-2xl flex items-center justify-center text-3xl" style="background:linear-gradient(160deg,#4C1D95,#1e1b4b);">🏆</div>
+          <div class="flex-shrink-0 w-28 h-40 rounded-2xl flex items-center justify-center text-3xl" style="background:linear-gradient(160deg,#78350f,#1c1917);">💰</div>
+          <div class="flex-shrink-0 w-28 h-40 rounded-2xl flex items-center justify-center text-3xl" style="background:linear-gradient(160deg,#1e3a5f,#0f172a);">🎮</div>
+          <div class="flex-shrink-0 w-28 h-40 rounded-2xl flex items-center justify-center text-3xl" style="background:linear-gradient(160deg,#14532d,#052e16);">💬</div>`;
+      }
     }
 
     function startAppDownload() {
@@ -4119,7 +4229,10 @@
         setStoreQR();
         renderStoreListings();
       }
-      if (name === 'moreapps' || name === 'appstore') applyAppStoreIconUI();
+      if (name === 'moreapps' || name === 'appstore') {
+        applyAppStoreIconUI();
+        renderAppStoreDetails();
+      }
     }
 
     // =====================================================
