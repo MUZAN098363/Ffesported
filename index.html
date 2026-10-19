@@ -1298,11 +1298,19 @@
         <div class="card p-3"><p class="text-gray-400 text-xs">GAME MODE</p><p id="room-mode" class="font-bold mt-1">-</p></div>
         <div class="card p-3"><p class="text-gray-400 text-xs">MAP</p><p id="room-map" class="font-bold mt-1">-</p></div>
         <div class="card p-3"><p class="text-gray-400 text-xs">PLAYERS</p><p id="room-players" class="font-bold mt-1">-</p></div>
-        <div class="card p-3"><p class="text-gray-400 text-xs">ROOM TYPE</p><p class="font-bold mt-1">PAID</p></div>
+        <div class="card p-3"><p class="text-gray-400 text-xs">ROOM TYPE</p><p id="room-type" class="font-bold mt-1">-</p></div>
         <div class="card p-3"><p class="text-gray-400 text-xs">ENTRY FEE</p><p id="room-fee" class="font-bold mt-1">-</p></div>
         <div class="card p-3"><p class="text-gray-400 text-xs">PRIZE POOL</p><p id="room-prize" class="font-bold mt-1 text-[#FFC107]">-</p></div>
       </div>
-      <p class="text-sm mb-3">Active Rooms</p>
+      <div class="card p-4 mb-5 text-center">
+        <p class="text-xs text-gray-400">TEAM CODE / PASSWORD</p>
+        <div class="flex items-center justify-center gap-2 mt-1">
+          <p id="current-room-pass" class="text-xl font-bold tracking-widest text-[#FBBF24]">------</p>
+          <button onclick="copyRoomPass()" class="text-[#FFC107] text-sm">📋</button>
+        </div>
+        <p id="matchroom-tournament-title" class="text-xs text-gray-500 mt-2">Join tournament ke baad yahan Room ID milega</p>
+      </div>
+      <p class="text-sm mb-3">Aapke Joined Tournaments / Active Rooms</p>
       <div id="active-rooms" class="space-y-3"></div>
     </div>
 
@@ -1862,9 +1870,11 @@
       </div>
 
       <div class="bg-purple-900/40 border border-purple-700 rounded-xl p-4 mb-4">
-        <p class="text-xs text-gray-400 mb-1">ROOM / SCENE</p>
+        <p class="text-xs text-gray-400 mb-1">ROOM ID</p>
         <p id="join-success-room" class="text-lg font-bold tracking-wider text-[#FFC107]">Waiting for Room ID...</p>
-        <p class="text-xs text-gray-500 mt-2">Match Room tab se Room ID mil jayega jab admin live karega. Team list Match Room me dikhegi.</p>
+        <p class="text-xs text-gray-400 mb-1 mt-3">TEAM CODE / PASSWORD</p>
+        <p id="join-success-pass" class="text-base font-bold tracking-wider text-green-400">------</p>
+        <p class="text-xs text-gray-500 mt-2">Agar abhi Room ID nahi hai to Match Room me baad me dikh jayega jab admin set karega.</p>
       </div>
 
       <div class="flex gap-3">
@@ -1936,6 +1946,15 @@
               <input id="t-prize" type="number" placeholder="Prize Pool Rs" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
             </div>
             <input id="t-slots" type="text" placeholder="Slots (30/48 Teams)" class="w-full bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            <div class="grid grid-cols-2 gap-3">
+              <input id="t-map" type="text" placeholder="Map (BERMUDA)" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+              <input id="t-players" type="text" placeholder="Players (48/48)" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" value="48/48" />
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <input id="t-roomid" type="text" placeholder="Room ID (optional abhi)" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+              <input id="t-password" type="text" placeholder="Team Code / Password" class="bg-[#0D0D0D] border border-gray-700 rounded-xl px-4 py-3 outline-none" />
+            </div>
+            <p class="text-[11px] text-gray-500">Room ID / Password baad me bhi set kar sakte ho. Paid = Entry Fee &gt; 0, Free = 0. Join pe balance auto cut hoga.</p>
             <button onclick="addTournament()" class="w-full btn-yellow py-3 rounded-xl">ADD TOURNAMENT</button>
           </div>
         </div>
@@ -2712,7 +2731,9 @@
       const unsub = db.collection('tournaments').orderBy('createdAt', 'desc').onSnapshot(snap => {
         const list = [];
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
+        cachedTournamentsList = list;
         renderTournaments(list);
+        refreshMatchRoomFromJoined();
       });
       unsubscribes.push(unsub);
     }
@@ -2732,12 +2753,18 @@
         snap.forEach(doc => list.push({ id: doc.id, ...doc.data() }));
         document.getElementById('admin-t-count').textContent = list.length;
         document.getElementById('admin-t-list').innerHTML = list.map(item => `
-          <div class="card p-4 flex justify-between items-center animate-fade">
-            <div>
-              <p class="font-bold">${item.title}</p>
-              <p class="text-xs text-gray-400">${item.mode} • ${item.date} • ₹${item.entry} → ₹${item.prize}</p>
+          <div class="card p-4 animate-fade">
+            <div class="flex justify-between items-start gap-2">
+              <div class="min-w-0 flex-1">
+                <p class="font-bold">${(item.title || '').replace(/</g,'&lt;')}</p>
+                <p class="text-xs text-gray-400">${item.mode || ''} • ${item.date || ''} • ${item.entry > 0 ? 'PAID ₹'+item.entry : 'FREE'} → Prize ₹${item.prize || 0}</p>
+                <p class="text-xs mt-1 ${item.roomId ? 'text-green-400' : 'text-yellow-400'}">Room ID: ${item.roomId ? (item.roomId + (item.password ? ' | Pass: ' + item.password : '')) : 'Not set yet'}</p>
+              </div>
+              <div class="flex flex-col gap-2 flex-shrink-0">
+                <button onclick="updateTournamentRoom('${item.id}')" class="btn-purple px-3 py-1.5 rounded-lg text-xs">SET ROOM</button>
+                <button onclick="deleteTournament('${item.id}')" class="btn-red px-3 py-1.5 rounded-lg text-xs">DELETE</button>
+              </div>
             </div>
-            <button onclick="deleteTournament('${item.id}')" class="btn-red px-3 py-1.5 rounded-lg text-sm">DELETE</button>
           </div>
         `).join('') || '<p class="text-gray-500 text-center">No tournaments</p>';
       });
@@ -2858,6 +2885,20 @@
         const already = joined.includes(t.id);
         const fee = t.entry || 0;
         const mode = (t.mode || 'Squad').toString();
+        const typeLabel = fee > 0 ? 'PAID' : 'FREE';
+        const typeStyle = fee > 0
+          ? 'background:rgba(251,191,36,0.15);color:#FBBF24;border:1px solid rgba(251,191,36,0.3);'
+          : 'background:rgba(34,197,94,0.15);color:#4ade80;border:1px solid rgba(34,197,94,0.3);';
+        let roomHint = '';
+        if (already) {
+          if (t.roomId) {
+            roomHint = '<p class="text-[11px] text-green-400 mt-2">Room ID: <b>' + String(t.roomId).replace(/</g,'&lt;') + '</b>' +
+              (t.password ? ' · Pass: <b>' + String(t.password).replace(/</g,'&lt;') + '</b>' : '') + '</p>';
+          } else {
+            roomHint = '<p class="text-[11px] text-yellow-400 mt-2">Room ID jaldi aayega — Match Room check karo</p>';
+          }
+        }
+        const safeTitle = (t.title || '').replace(/'/g, "\\'");
         return `
         <div class="card overflow-hidden animate-fade" style="border-color:rgba(251,191,36,0.18);">
           <div class="p-3.5">
@@ -2867,20 +2908,22 @@
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="text-[10px] font-bold px-2 py-0.5 rounded-md" style="background:rgba(251,191,36,0.15);color:#FBBF24;border:1px solid rgba(251,191,36,0.3);">${mode}</span>
+                  <span class="text-[10px] font-bold px-2 py-0.5 rounded-md" style="${typeStyle}">${typeLabel}</span>
                   <span class="text-[10px] text-gray-500">${t.date || ''}</span>
                 </div>
                 <h4 class="font-bold mt-1.5 text-sm leading-snug">${t.title || 'Tournament'}</h4>
                 <div class="flex gap-3 text-[11px] mt-2">
-                  <span class="text-gray-400">Entry <b class="text-white">₹${fee}</b></span>
+                  <span class="text-gray-400">Entry <b class="text-white">${fee > 0 ? '₹'+fee : 'FREE'}</b></span>
                   <span class="text-gray-400">Prize <b class="text-[#FBBF24]">₹${t.prize || 0}</b></span>
                 </div>
                 ${t.slots ? `<p class="text-[10px] text-gray-500 mt-1">${t.slots}</p>` : ''}
+                ${roomHint}
               </div>
             </div>
             <div class="mt-3">
               ${already
-                ? `<button class="w-full bg-green-800/80 text-white py-2.5 rounded-xl text-sm font-bold" disabled>✓ JOINED</button>`
-                : `<button onclick="joinTournament('${t.id}', ${fee}, '${(t.title || '').replace(/'/g, "\\'")}')" class="w-full btn-yellow py-2.5 rounded-xl text-sm font-bold">Join Now</button>`
+                ? `<button onclick="showScreen('matchroom')" class="w-full bg-green-800/80 text-white py-2.5 rounded-xl text-sm font-bold">✓ JOINED · OPEN MATCH ROOM</button>`
+                : `<button onclick="joinTournament('${t.id}', ${fee}, '${safeTitle}')" class="w-full btn-yellow py-2.5 rounded-xl text-sm font-bold">Join Now · ${typeLabel}</button>`
               }
             </div>
           </div>
@@ -2960,15 +3003,28 @@
           renderTournaments(list);
         });
 
-        // Free Fire style success modal
+        // Free Fire style success modal — room from THIS tournament
+        let tRoomId = '';
+        let tPass = '';
+        try {
+          const tDoc = await db.collection('tournaments').doc(tournamentId).get();
+          if (tDoc.exists) {
+            const td = tDoc.data();
+            tRoomId = td.roomId || '';
+            tPass = td.password || '';
+          }
+        } catch (e) {}
+
         document.getElementById('join-success-title').textContent = title;
         document.getElementById('join-success-fee').textContent = '₹' + fee;
         document.getElementById('join-success-balance').textContent = '₹' + (fee > 0 ? newBalance.toFixed(2) : (currentUser.balance || 0).toFixed(2));
-        // Show latest room ID if available
-        const roomEl = document.getElementById('current-room-id');
-        const roomId = roomEl ? roomEl.textContent : '------';
-        document.getElementById('join-success-room').textContent = (roomId && roomId !== '------') ? roomId : 'Waiting for Room ID...';
+        document.getElementById('join-success-room').textContent = tRoomId || 'Waiting for Room ID...';
+        const passEl = document.getElementById('join-success-pass');
+        if (passEl) passEl.textContent = tPass || (tRoomId ? 'No password' : '------');
         document.getElementById('join-success-modal').classList.remove('hide');
+
+        // Refresh match room view
+        refreshMatchRoomFromJoined();
       } catch (err) {
         alert('Error: ' + err.message);
       }
@@ -2978,34 +3034,132 @@
       document.getElementById('join-success-modal').classList.add('hide');
     }
 
+    // Cache of rooms + tournaments for Match Room
+    let cachedRoomsList = [];
+    let cachedTournamentsList = [];
+
     function renderRoomsForUser(list) {
-      if (list.length === 0) {
-        document.getElementById('active-rooms').innerHTML = '<p class="text-gray-500 text-center py-4">No active rooms</p>';
-        document.getElementById('current-room-id').textContent = '------';
+      cachedRoomsList = list || [];
+      refreshMatchRoomFromJoined();
+    }
+
+    function setMatchRoomHeader(item) {
+      const roomId = item.roomId || '------';
+      const pass = item.password || '------';
+      const entry = item.entry != null ? item.entry : (item.entryFee != null ? item.entryFee : 0);
+      document.getElementById('current-room-id').textContent = roomId || '------';
+      const passEl = document.getElementById('current-room-pass');
+      if (passEl) passEl.textContent = pass || '------';
+      const titleEl = document.getElementById('matchroom-tournament-title');
+      if (titleEl) titleEl.textContent = item.title || 'Tournament';
+      document.getElementById('room-mode').textContent = item.mode || '-';
+      document.getElementById('room-map').textContent = item.map || '-';
+      document.getElementById('room-players').textContent = item.players || item.slots || '-';
+      const typeEl = document.getElementById('room-type');
+      if (typeEl) typeEl.textContent = (entry > 0 || item.roomType === 'PAID') ? 'PAID' : 'FREE';
+      document.getElementById('room-fee').textContent = entry > 0 ? ('₹' + entry) : 'FREE';
+      document.getElementById('room-prize').textContent = '₹' + (item.prize || 0);
+    }
+
+    function clearMatchRoomHeader() {
+      document.getElementById('current-room-id').textContent = '------';
+      const passEl = document.getElementById('current-room-pass');
+      if (passEl) passEl.textContent = '------';
+      const titleEl = document.getElementById('matchroom-tournament-title');
+      if (titleEl) titleEl.textContent = 'Join tournament ke baad yahan Room ID milega';
+      document.getElementById('room-mode').textContent = '-';
+      document.getElementById('room-map').textContent = '-';
+      document.getElementById('room-players').textContent = '-';
+      const typeEl = document.getElementById('room-type');
+      if (typeEl) typeEl.textContent = '-';
+      document.getElementById('room-fee').textContent = '-';
+      document.getElementById('room-prize').textContent = '-';
+    }
+
+    function selectMatchRoom(kind, id) {
+      if (kind === 't') {
+        const t = cachedTournamentsList.find(x => x.id === id);
+        if (t) setMatchRoomHeader(t);
+      } else {
+        const r = cachedRoomsList.find(x => x.id === id);
+        if (r) setMatchRoomHeader(r);
+      }
+    }
+
+    async function refreshMatchRoomFromJoined() {
+      const joined = (currentUser && currentUser.joinedTournaments) ? currentUser.joinedTournaments : [];
+      // Prefer tournaments user joined
+      let joinedTs = cachedTournamentsList.filter(t => joined.includes(t.id));
+      if (!cachedTournamentsList.length) {
+        try {
+          const snap = await db.collection('tournaments').orderBy('createdAt', 'desc').get();
+          cachedTournamentsList = [];
+          snap.forEach(doc => cachedTournamentsList.push({ id: doc.id, ...doc.data() }));
+          joinedTs = cachedTournamentsList.filter(t => joined.includes(t.id));
+        } catch (e) {}
+      }
+
+      const roomCards = [];
+      // Joined tournaments first
+      joinedTs.forEach(t => {
+        const entry = t.entry || 0;
+        const type = entry > 0 ? 'PAID' : 'FREE';
+        roomCards.push({
+          kind: 't', id: t.id, title: t.title, mode: t.mode, map: t.map, players: t.players || t.slots,
+          roomId: t.roomId, password: t.password, entry, prize: t.prize, type, joined: true
+        });
+      });
+      // Admin-created standalone rooms
+      (cachedRoomsList || []).forEach(r => {
+        roomCards.push({
+          kind: 'r', id: r.id, title: r.title, mode: r.mode, map: r.map, players: r.players,
+          roomId: r.roomId, password: r.password || '', entry: r.entry, prize: r.prize,
+          type: (r.entry > 0) ? 'PAID' : 'FREE', joined: false
+        });
+      });
+
+      if (!roomCards.length) {
+        clearMatchRoomHeader();
+        document.getElementById('active-rooms').innerHTML = '<p class="text-gray-500 text-center py-4">No active rooms. Tournament join karo, phir yahan Room ID dikhega.</p>';
         return;
       }
-      const latest = list[0];
-      document.getElementById('current-room-id').textContent = latest.roomId;
-      document.getElementById('room-mode').textContent = latest.mode;
-      document.getElementById('room-map').textContent = latest.map;
-      document.getElementById('room-players').textContent = latest.players;
-      document.getElementById('room-fee').textContent = '₹' + latest.entry;
-      document.getElementById('room-prize').textContent = '₹' + latest.prize;
 
-      document.getElementById('active-rooms').innerHTML = list.map(r => `
-        <div class="card p-4 animate-fade">
-          <p class="font-bold">${r.title}</p>
-          <p class="text-xs text-gray-400">${r.mode} • ${r.map}</p>
-          <p class="text-sm mt-1">Room ID: <span class="text-[#FFC107] font-bold">${r.roomId}</span></p>
+      // Header = first joined tournament with room, else first card
+      const preferred = roomCards.find(c => c.joined && c.roomId) || roomCards.find(c => c.joined) || roomCards[0];
+      setMatchRoomHeader(preferred);
+
+      document.getElementById('active-rooms').innerHTML = roomCards.map(r => `
+        <div class="card p-4 animate-fade cursor-pointer" onclick="selectMatchRoom('${r.kind}', '${r.id}')">
+          <div class="flex justify-between items-start gap-2">
+            <div class="min-w-0">
+              <p class="font-bold truncate">${(r.title || '').replace(/</g,'&lt;')}</p>
+              <p class="text-xs text-gray-400">${r.mode || ''} ${r.map ? '• ' + r.map : ''}</p>
+              <p class="text-sm mt-1">Room ID: <span class="text-[#FFC107] font-bold">${r.roomId || 'Waiting...'}</span></p>
+              ${r.password ? `<p class="text-xs text-green-400 mt-0.5">Pass: <span class="font-bold">${(r.password || '').replace(/</g,'&lt;')}</span></p>` : ''}
+            </div>
+            <div class="text-right flex-shrink-0">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded ${r.type === 'PAID' ? 'bg-yellow-900/50 text-[#FBBF24]' : 'bg-green-900/40 text-green-400'}">${r.type}</span>
+              ${r.joined ? '<p class="text-[10px] text-green-400 mt-1">JOINED</p>' : ''}
+            </div>
+          </div>
         </div>
       `).join('');
     }
 
     function copyRoomId() {
       const id = document.getElementById('current-room-id').textContent;
-      if (id === '------') return;
+      if (!id || id === '------') return;
       navigator.clipboard.writeText(id);
       alert('Room ID copied: ' + id);
+    }
+
+    function copyRoomPass() {
+      const id = document.getElementById('current-room-pass');
+      if (!id) return;
+      const val = id.textContent;
+      if (!val || val === '------') return;
+      navigator.clipboard.writeText(val);
+      alert('Password copied: ' + val);
     }
 
     function updateWalletUI() {
@@ -3522,18 +3676,45 @@
       const entry = parseFloat(document.getElementById('t-entry').value) || 0;
       const prize = parseFloat(document.getElementById('t-prize').value) || 0;
       const slots = document.getElementById('t-slots').value.trim();
+      const map = (document.getElementById('t-map') && document.getElementById('t-map').value.trim()) || '';
+      const players = (document.getElementById('t-players') && document.getElementById('t-players').value.trim()) || '48/48';
+      const roomId = (document.getElementById('t-roomid') && document.getElementById('t-roomid').value.trim()) || '';
+      const password = (document.getElementById('t-password') && document.getElementById('t-password').value.trim()) || '';
       if (!title || !date) return alert('Title aur Date zaroori hain');
 
       await db.collection('tournaments').add({
-        title, mode, date, entry, prize, slots,
+        title, mode, date, entry, prize, slots, map, players,
+        roomId, password,
+        roomType: entry > 0 ? 'PAID' : 'FREE',
+        active: true,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
-      alert('Tournament live add ho gaya!');
+      alert('Tournament live add ho gaya!' + (roomId ? ('\nRoom ID: ' + roomId) : '\nRoom ID baad me set kar sakte ho.'));
       document.getElementById('t-title').value = '';
       document.getElementById('t-date').value = '';
       document.getElementById('t-entry').value = '';
       document.getElementById('t-prize').value = '';
       document.getElementById('t-slots').value = '';
+      if (document.getElementById('t-map')) document.getElementById('t-map').value = '';
+      if (document.getElementById('t-players')) document.getElementById('t-players').value = '48/48';
+      if (document.getElementById('t-roomid')) document.getElementById('t-roomid').value = '';
+      if (document.getElementById('t-password')) document.getElementById('t-password').value = '';
+    }
+
+    async function updateTournamentRoom(id) {
+      const roomId = prompt('Room ID likho (match ke liye):', '');
+      if (roomId === null) return;
+      const password = prompt('Team Code / Password (optional):', '');
+      if (password === null) return;
+      try {
+        await db.collection('tournaments').doc(id).update({
+          roomId: (roomId || '').trim(),
+          password: (password || '').trim()
+        });
+        alert('Room ID / Password update ho gaya! Joined users Match Room me dekh sakenge.');
+      } catch (err) {
+        alert('Error: ' + err.message);
+      }
     }
 
     async function deleteTournament(id) {
